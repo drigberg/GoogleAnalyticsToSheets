@@ -1,0 +1,25 @@
+{
+  "name": "google-analytics-to-sheets",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "start": "node sheets.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/drigberg/GoogleAnalyticsToSheets.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/drigberg/GoogleAnalyticsToSheets/issues"
+  },
+  "homepage": "https://github.com/drigberg/GoogleAnalyticsToSheets#readme",
+  "dependencies": {
+    "google-auth-library": "0.11.0",
+    "googleapis": "22.2.0",
+    "lodash": "4.17.4"
+  }
+}
