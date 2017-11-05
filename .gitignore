@@ -1,3 +1,10 @@
+# Project
+analytics_key.json
+sheets_key.json
+
+# Mac
+.DS_Store
+
 # Logs
 logs
 *.log
