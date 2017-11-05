@@ -28,7 +28,7 @@ function getMultipleResponses(questions, responses) {
         return responses
       }
 
-      return getResponses(questions, responses)
+      return getMultipleResponses(questions, responses)
     })
 }
 

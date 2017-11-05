@@ -7,11 +7,11 @@ const readline = require('readline')
 const google = require('googleapis')
 const googleAuth = require('google-auth-library')
 const { 
+    getMultipleResponses,
     parseAnalyticsResponse,       
     readlineAsPromise, 
     storeData 
 } = require('./helpers')
-
 /**
 * Module variables
 */
@@ -24,7 +24,8 @@ const TOKEN_DIR = (process.env.HOME || process.env.HOMEPATH ||
     process.env.USERPROFILE) + '/.credentials/'
 const TOKEN_PATH = TOKEN_DIR + 'sheets.googleapis.com-nodejs-quickstart.json'
 const CLIENT_SECRET_PATH = 'sheets_key.json'
-
+let view_id
+let spreadsheet_id
 /**
 * Module
 */
@@ -101,11 +102,17 @@ function fetchEnv() {
             let promise = Promise.resolve()
 
             if (err || !data) {
-                const question = 'What is the id of your google sheet?'
+                const questions = [
+                    'What is the id of your google sheet?',
+                    'What is your view id?'
+                ]
 
-                promise = readlineAsPromise(question)
-                .then((response) => {
-                    data = { "spreadsheetId": response }
+                promise = getMultipleResponses(questions)
+                .then((res) => {
+                    data = { 
+                        "spreadsheetId": res[0],
+                        "viewId": res[1]
+                    }
 
                     storeData(JSON.stringify(data), ENV_PATH)
                 })
@@ -114,36 +121,36 @@ function fetchEnv() {
             return promise
             .then(() => {
                 let parsed = Buffer.isBuffer(data) ? JSON.parse(data) : data
+                console.log(parsed)
+                view_id = parsed.viewId
+                spreadsheet_id = parsed.spreadsheetId
 
-                resolve(parsed.spreadsheetId)
+                resolve()
             })
         })
     })
 }
 
 function writeToSheet(authClient, data) {
-    fetchEnv()
-    .then((spreadsheet_id) => {
-        console.log("\nSending data to Sheets API...")
-        const body = {
-          values: [data.headers, ...data.rows]
+    console.log("\nSending data to Sheets API...")
+    const body = {
+        values: [data.headers, ...data.rows]
+    }
+
+    const sheets = google.sheets('v4')
+
+    sheets.spreadsheets.values.append({
+        auth: authClient,
+        spreadsheetId: spreadsheet_id,
+        range: "AllData!A1:Z",
+        valueInputOption: "RAW",
+        resource: body
+    }, (err, res) => {
+        if (err) {
+        console.log("Write error:", err)
+        } else {
+        console.log(`${res.updates.updatedCells} cells updated in range ${res.updates.updatedRange}.\n`)
         }
-
-        const sheets = google.sheets('v4')
-
-        sheets.spreadsheets.values.append({
-            auth: authClient,
-            spreadsheetId: spreadsheet_id,
-            range: "AllData!A1:Z",
-            valueInputOption: "RAW",
-            resource: body
-        }, (err, res) => {
-          if (err) {
-            console.log("Write error:", err)
-          } else {
-            console.log(`${res.updates.updatedCells} cells updated in range ${res.updates.updatedRange}.\n`)
-          }
-        })
     })
 }
 
@@ -156,7 +163,7 @@ function getAnalyticsData() {
     return new Promise((resolve, reject) => {
         console.log("Getting analytics data...")
         const { spawn } = require("child_process");
-        const process = spawn('python', ["./analytics.py"]);
+        const process = spawn('python', ["./analytics.py", view_id]);
 
         process.stdout.on('data', (chunk) => {
             let readable = chunk.toString().replace(/u'/g, "'").replace(/'/g, "\"")
@@ -177,7 +184,10 @@ function getAnalyticsData() {
 
 function main() {
     console.log("\n")
-    getAnalyticsData()
+    fetchEnv()
+    .then(() => {
+        return getAnalyticsData()
+    })    
     .catch((err) => {
         console.log("Analytics error:", err)
     })

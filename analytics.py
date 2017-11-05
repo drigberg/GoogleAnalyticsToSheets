@@ -6,7 +6,7 @@ import sys
 
 SCOPES = ['https://www.googleapis.com/auth/analytics.readonly']
 KEY_FILE_LOCATION = './analytics_key.json'
-VIEW_ID = '163977396'
+VIEW_ID = sys.argv[1]
 
 def initialize_analyticsreporting():
     """Initializes an Analytics Reporting API V4 service object.
