@@ -38,12 +38,12 @@ def get_report(analytics):
                 'dateRanges': [{'startDate': '7daysAgo', 'endDate': 'today'}],
                 'metrics': [{'expression': 'ga:sessions'}],
                 'dimensions': [
-                    {'name': 'ga:country'}, 
+                    {'name': 'ga:country'},
                     {'name': 'ga:city'},
                     {'name': 'ga:userType'},
                     {'name': 'ga:browser'},
                     {'name': 'ga:operatingSystem'}
-                ]  
+                ]
             }]
         }
     ).execute()

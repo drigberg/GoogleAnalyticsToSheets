@@ -162,24 +162,27 @@ function writeToSheet(data) {
 * Module execution
 */
 function getAnalyticsData() {
-    let parsed
     return new Promise((resolve, reject) => {
         console.log("Getting analytics data...")
         const { spawn } = require("child_process");
         const process = spawn('python', ["./analytics.py", view_id]);
+        let data = ""
 
         process.stdout.on('data', (chunk) => {
-            let readable = chunk.toString().replace(/u'/g, "'").replace(/'/g, "\"")
-            parsed = JSON.parse(readable); // buffer to object
+            data += chunk.toString().replace(/u'/g, "'").replace(/'/g, "\"") // buffer to string
         });
 
         process.stdout.on('end', () => {
+            const parsed = JSON.parse(data); // string to object
             resolve(parsed)
         })
 
         process.stdout.on('error', (err) => {
             reject(err)
-        });
+        })
+
+        process.stdout.pipe(process.stdout)
+        process.stderr.pipe(process.stderr)
     })
 }
 
@@ -195,6 +198,11 @@ function main() {
         console.log("Analytics error:", err)
     })
     .then((data) => {
+        if (!data) {
+            console.log("Error: no data received")
+            process.exit(0)
+        }
+
         const parsedData = parseAnalyticsResponse(data)
         console.log("Got analytics data!")
         console.log("\nReading sheets client file...")
