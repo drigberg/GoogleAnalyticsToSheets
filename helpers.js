@@ -38,35 +38,41 @@ function getMultipleResponses(questions, responses) {
  * @param {Object} data The data to store to disk.
  */
 function storeData(data, path, dir) {
-  if (dir) {
-    try {
-      fs.mkdirSync(dir)
-    } catch (err) {
-      if (err.code != 'EEXIST') {
-        throw err
+  return new Promise((resolve, reject) => {
+    if (dir) {
+      try {
+        fs.mkdirSync(dir)
+      } catch (err) {
+        if (err.code != 'EEXIST') {
+          throw err
+        }
       }
     }
-  }
 
-  fs.writeFile(path, data, (err) => {
-    if (err) {
-      console.log("Error saving data:", data)
-      return
-    }
-    console.log('Data stored to ' + path)
+
+    const writeable = JSON.stringify(data)
+
+    fs.writeFile(path, writeable, (err) => {
+      if (err) {
+        console.log("Error saving data:", data)
+        reject(err)
+      }
+      console.log('Data stored to ' + path)
+      resolve()
+    })
   })
 }
 
 function parseAnalyticsResponse(data) {
   const ret = { rows: []}
 
-  data.reports.forEach((report) => {    
+  data.reports.forEach((report) => {
     let header = report.columnHeader || {}
     let dimensionHeaders = _.cloneDeep(header.dimensions || [])
     let headers = ["Date Range", ...dimensionHeaders, "Sessions"]
 
     // let metricHeaders = (header.metricHeader && header.metricHeader.metricHeaderEntries) || []
-    
+
     Object.assign(ret, { headers })
 
     report.data.rows.forEach((row) => {
@@ -77,7 +83,7 @@ function parseAnalyticsResponse(data) {
         let values = dateRangeValues[i]
         ret.rows.push([i, ...dimensions, values.values[0]])
       }
-    })      
+    })
   })
 
   return ret

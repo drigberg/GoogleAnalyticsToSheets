@@ -6,11 +6,11 @@ const fs = require('fs')
 const readline = require('readline')
 const google = require('googleapis')
 const googleAuth = require('google-auth-library')
-const { 
+const {
     getMultipleResponses,
-    parseAnalyticsResponse,       
-    readlineAsPromise, 
-    storeData 
+    parseAnalyticsResponse,
+    readlineAsPromise,
+    storeData
 } = require('./helpers')
 /**
 * Module variables
@@ -39,22 +39,21 @@ let spreadsheet_id
  */
 function authorize(credentials, callback, callbackData) {
     console.log("Getting authorization from Sheets API...")
-    return new Promise((resolve, reject) => {
-        const clientSecret = credentials.installed.client_secret
-        const clientId = credentials.installed.client_id
-        const redirectUrl = credentials.installed.redirect_uris[0]
-        const auth = new googleAuth()
-        const oauth2Client = new auth.OAuth2(clientId, clientSecret, redirectUrl)
 
-        // Check if we have previously stored a token.
-        fs.readFile(TOKEN_PATH, (err, token) => {
-          if (err) {
-            getNewToken(oauth2Client, callback)
-          } else {
-            oauth2Client.credentials = JSON.parse(token)
-            callback(oauth2Client, callbackData)
-          }
-        })
+    const clientSecret = credentials.installed.client_secret
+    const clientId = credentials.installed.client_id
+    const redirectUrl = credentials.installed.redirect_uris[0]
+    const auth = new googleAuth()
+    const oauth2Client = new auth.OAuth2(clientId, clientSecret, redirectUrl)
+
+    // Check if we have previously stored a token.
+    fs.readFile(TOKEN_PATH, (err, token) => {
+        if (err) {
+            return getNewToken(oauth2Client, callback)
+        }
+
+        oauth2Client.credentials = JSON.parse(token)
+        return callback(oauth2Client)
     })
 }
 
@@ -67,25 +66,28 @@ function authorize(credentials, callback, callbackData) {
  *     client.
  */
 function getNewToken(oauth2Client, callback) {
-  var authUrl = oauth2Client.generateAuthUrl({
+  const authUrl = oauth2Client.generateAuthUrl({
     access_type: 'offline',
     scope: SCOPES
   })
 
+  const question = 'Enter the code from that page here:'
+
   console.log(`Authorize this app by visiting this url: ${authUrl}`)
 
-  let question = 'Enter the code from that page here:'
-
-  readlineAsPromise(question)
+  return readlineAsPromise(question)
   .then((code) => {
       oauth2Client.getToken(code, (err, token) => {
         if (err) {
           console.log('Error while trying to retrieve access token', err)
           return
         }
+
         oauth2Client.credentials = token
-        storeData(token, TOKEN_PATH, TOKEN_DIR)
-        callback(oauth2Client)
+        return storeData(token, TOKEN_PATH, TOKEN_DIR)
+        .then(() => {
+            return callback(oauth2Client)
+        })
       })
   })
 }
@@ -109,7 +111,7 @@ function fetchEnv() {
 
                 promise = getMultipleResponses(questions)
                 .then((res) => {
-                    data = { 
+                    data = {
                         "spreadsheetId": res[0],
                         "viewId": res[1]
                     }
@@ -118,7 +120,7 @@ function fetchEnv() {
                 })
             }
 
-            return promise
+            promise
             .then(() => {
                 let parsed = Buffer.isBuffer(data) ? JSON.parse(data) : data
                 console.log(parsed)
@@ -131,33 +133,34 @@ function fetchEnv() {
     })
 }
 
-function writeToSheet(authClient, data) {
-    console.log("\nSending data to Sheets API...")
-    const body = {
-        values: [data.headers, ...data.rows]
-    }
-
-    const sheets = google.sheets('v4')
-
-    sheets.spreadsheets.values.append({
-        auth: authClient,
-        spreadsheetId: spreadsheet_id,
-        range: "AllData!A1:Z",
-        valueInputOption: "RAW",
-        resource: body
-    }, (err, res) => {
-        if (err) {
-        console.log("Write error:", err)
-        } else {
-        console.log(`${res.updates.updatedCells} cells updated in range ${res.updates.updatedRange}.\n`)
+function writeToSheet(data) {
+    return (authClient) => {
+        console.log("\nSending data to Sheets API...")
+        const body = {
+            values: [data.headers, ...data.rows]
         }
-    })
+
+        const sheets = google.sheets('v4')
+
+        sheets.spreadsheets.values.append({
+            auth: authClient,
+            spreadsheetId: spreadsheet_id,
+            range: "AllData!A1:Z",
+            valueInputOption: "RAW",
+            resource: body
+        }, (err, res) => {
+            if (err) {
+                console.log("Write error:", err)
+            } else {
+                console.log(`${res.updates.updatedCells} cells updated in range ${res.updates.updatedRange}.\n`)
+            }
+        })
+    }
 }
 
 /**
 * Module execution
 */
-
 function getAnalyticsData() {
     let parsed
     return new Promise((resolve, reject) => {
@@ -187,7 +190,7 @@ function main() {
     fetchEnv()
     .then(() => {
         return getAnalyticsData()
-    })    
+    })
     .catch((err) => {
         console.log("Analytics error:", err)
     })
@@ -203,7 +206,9 @@ function main() {
 
             // Authorize a client with the loaded credentials, then call the
             // Google Sheets API.
-            authorize(JSON.parse(content), writeToSheet, parsedData)
+            const writer = writeToSheet(parsedData)
+            const parsedSecret = JSON.parse(content)
+            authorize(parsedSecret, writer)
         })
     })
     .catch((err) => {
