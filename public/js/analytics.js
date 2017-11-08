@@ -1,0 +1,72 @@
+
+const VIEW_ID = '163977396';
+
+function queryReports() {
+  gapi.client.request({
+    path: '/v4/reports:batchGet',
+    root: 'https://analyticsreporting.googleapis.com/',
+    method: 'POST',
+    body: {
+      reportRequests: [
+        {
+          viewId: VIEW_ID,
+          dateRanges: [
+            {
+              startDate: '7daysAgo',
+              endDate: 'today'
+            }
+          ],
+          metrics: [
+            {
+              expression: 'ga:sessions'
+            }
+          ],
+          dimensions: [
+            { name: 'ga:country' },
+            { name: 'ga:city' },
+            { name: 'ga:userType' },
+            { name: 'ga:browser' },
+            { name: 'ga:operatingSystem' }
+          ]
+        }
+      ]
+    }
+  }).then(sendToSheets, console.error.bind(console));
+}
+
+function sendToSheets(response) {
+  console.log(response.result)
+
+  const parsed = parseAnalyticsResponse(response.result)
+
+  const formattedJson = JSON.stringify(parsed, null, 2);
+  document.getElementById('query-output').value = formattedJson;
+
+  writeToSheets(parsed)
+}
+
+function parseAnalyticsResponse(data) {
+  const ret = { rows: [] }
+
+  data.reports.forEach((report) => {
+    let header = report.columnHeader || {}
+    let dimensionHeaders = _.cloneDeep(header.dimensions || [])
+    let headers = ["Date Range", ...dimensionHeaders, "Sessions"]
+
+    // let metricHeaders = (header.metricHeader && header.metricHeader.metricHeaderEntries) || []
+
+    Object.assign(ret, { headers })
+
+    report.data.rows.forEach((row) => {
+      dimensions = row.dimensions || []
+      dateRangeValues = row.metrics || []
+
+      for (let i = 0; i < dateRangeValues.length; i++) {
+        let values = dateRangeValues[i]
+        ret.rows.push([i, ...dimensions, values.values[0]])
+      }
+    })
+  })
+
+  return ret
+}

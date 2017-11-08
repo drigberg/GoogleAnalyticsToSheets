@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>Hello Analytics Reporting API V4</title>
+  <meta name="google-signin-client_id" content="564478280391-lecf9d328i7leegs84sdi2c8s2jo26o0.apps.googleusercontent.com">
+  <meta name="google-signin-scope" content="https://www.googleapis.com/auth/analytics.readonly">
+</head>
+
+<body>
+
+  <h1>Hello Analytics Reporting APPPPPI V4</h1>
+
+  <!-- The Sign-in button. This will run `queryReports()` on success. -->
+  <p class="g-signin2"></p>
+
+  <button type="button" id="fetch-and-send">Fetch and Send</button>
+
+  <textarea cols="80" rows="20" id="query-output"></textarea>
+
+
+  <pre id="content"></pre>
+
+  <script src="/js/sheets.js"></script>
+  <script async defer src="https://apis.google.com/js/api.js" onload="this.onload=function(){};handleClientLoad()" onreadystatechange="if (this.readyState === 'complete') this.onload()">
+  </script>
+
+  <!-- Load the JavaScript API client and Sign-in library. -->
+  <script src="https://apis.google.com/js/client:platform.js"></script>
+  <script src="https://code.jquery.com/jquery-3.2.1.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
+    crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.4/lodash.min.js"></script>
+  <script src="/js/analytics.js"></script>
+  <script src="/js/main.js"></script>
+</body>
+
+</html>

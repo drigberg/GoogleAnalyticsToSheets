@@ -1,8 +1,3 @@
-# Project
-analytics_key.json
-sheets_key.json
-.env.json
-
 # Mac
 .DS_Store
 
