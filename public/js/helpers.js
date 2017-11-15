@@ -1,26 +1,22 @@
 const fs = require("fs")
 const readline = require('readline')
 const _ = require("lodash")
+const dialogs = require('dialogs')()
 
-function readlineAsPromise(question) {
+function dialogAsPromise(question) {
   return new Promise((resolve, reject) => {
-    let $rl = readline.createInterface({
-      input: process.stdin,
-      output: process.stdout
-    })
-    $rl.question(`${question} `, (res) => {
-      $rl.close()
+    dialogs.prompt(question, (res) => {
       resolve(res)
     })
   })
 }
 
-function getMultipleResponses(questions, responses) {
+function multipleDialogs(questions, responses) {
   if (!responses) {
     responses = []
   }
 
-  return readlineAsPromise(questions.shift())
+  return dialogAsPromise(questions.shift())
     .then((res) => {
       responses.push(res)
 
@@ -28,7 +24,7 @@ function getMultipleResponses(questions, responses) {
         return responses
       }
 
-      return getMultipleResponses(questions, responses)
+      return multipleDialogs(questions, responses)
     })
 }
 

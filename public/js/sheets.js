@@ -98,11 +98,11 @@ function fetchEnv() {
 
       if (err || !data) {
         const questions = [
-          'What is the id of your google sheet?',
+          'What is the id of your Google Sheet?',
           'What is your view id?'
         ]
 
-        promise = getMultipleResponses(questions)
+        promise = multipleDialogs(questions)
           .then((res) => {
             data = {
               "spreadsheetId": res[0],
