@@ -1,16 +1,16 @@
 // Client ID and API key from the Developer Console
-var CLIENT_ID = '564478280391-lecf9d328i7leegs84sdi2c8s2jo26o0.apps.googleusercontent.com';
-var API_KEY = 'AIzaSyCYZxcJjQGu88aYdYXwJNTGya32i7hGcLw';
+let CLIENT_ID = '564478280391-lecf9d328i7leegs84sdi2c8s2jo26o0.apps.googleusercontent.com';
+let API_KEY = 'AIzaSyCYZxcJjQGu88aYdYXwJNTGya32i7hGcLw';
 
 // Array of API discovery doc URLs for APIs used by the quickstart
-var DISCOVERY_DOCS = ["https://sheets.googleapis.com/$discovery/rest?version=v4"];
+let DISCOVERY_DOCS = ["https://sheets.googleapis.com/$discovery/rest?version=v4"];
 
 // Authorization scopes required by the API; multiple scopes can be
 // included, separated by spaces.
-var SCOPES = "https://www.googleapis.com/auth/spreadsheets";
+let SCOPES = "https://www.googleapis.com/auth/spreadsheets";
 
-var authorizeButton = document.getElementById('authorize-button');
-var signoutButton = document.getElementById('signout-button');
+let authorizeButton = document.getElementById('authorize-button');
+let signoutButton = document.getElementById('signout-button');
 
 /**
  *  On load, called to load the auth2 library and API client library.

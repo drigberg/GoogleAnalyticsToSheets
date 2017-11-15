@@ -1,7 +1,40 @@
 
-const VIEW_ID = '163977396';
+const VIEW_ID = '163977396'
+
+
+function getMetrics() {
+  let metrics = Array.from($(".metrics"))
+  let checkedMetrics = []
+
+  metrics.forEach(function (checkBox) {
+    if (checkBox.checked) {
+      let checkBoxId = {expression: `ga:${checkBox.id}`}
+      checkedMetrics.push(checkBoxId)
+    }
+  })
+  return checkedMetrics
+}
+
+function getDimensions() {
+  let dimensions = Array.from($(".dimensions"))
+  let checkedDimensions = []
+
+  dimensions.forEach(function (checkBox) {
+    if (checkBox.checked) {
+      let checkBoxId = {name: `ga:${checkBox.id}`}
+      checkedDimensions.push(checkBoxId)
+    }
+  })
+  return checkedDimensions
+}
 
 function queryReports() {
+  console.log($("#screenResolution").prop('checked'))
+  const metrics = getMetrics()
+  const dimensions = getDimensions()
+
+  console.log(metrics, dimensions)
+
   gapi.client.request({
     path: '/v4/reports:batchGet',
     root: 'https://analyticsreporting.googleapis.com/',
@@ -16,18 +49,8 @@ function queryReports() {
               endDate: 'today'
             }
           ],
-          metrics: [
-            {
-              expression: 'ga:sessions'
-            }
-          ],
-          dimensions: [
-            { name: 'ga:country' },
-            { name: 'ga:city' },
-            { name: 'ga:userType' },
-            { name: 'ga:browser' },
-            { name: 'ga:operatingSystem' }
-          ]
+          metrics: metrics,
+          dimensions: dimensions
         }
       ]
     }
@@ -46,6 +69,7 @@ function sendToSheets(response) {
 }
 
 function parseAnalyticsResponse(data) {
+  console.log(data)
   const ret = { rows: [] }
 
   data.reports.forEach((report) => {
