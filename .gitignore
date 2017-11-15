@@ -1,3 +1,6 @@
+# Project
+*.json
+
 # Mac
 .DS_Store
 
