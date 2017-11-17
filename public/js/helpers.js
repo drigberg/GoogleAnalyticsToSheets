@@ -1,26 +1,52 @@
 const fs = require("fs")
 const readline = require('readline')
 const _ = require("lodash")
+const dialogs = require('dialogs')()
 
-function readlineAsPromise(question) {
+function writeToConsole(text) {
+  let existingText = $("#console").text()
+  let newText = "\n" + text
+  $("#console").text(existingText + newText)
+  $('#console').scrollTop($('#console')[0].scrollHeight);
+}
+
+function dialogAsPromise(question) {
   return new Promise((resolve, reject) => {
-    let $rl = readline.createInterface({
-      input: process.stdin,
-      output: process.stdout
-    })
-    $rl.question(`${question} `, (res) => {
-      $rl.close()
+    dialogs.prompt(question, (res) => {
       resolve(res)
     })
   })
 }
 
-function getMultipleResponses(questions, responses) {
+function showConsoleInput() {
+  if ($("#console-input").css("display") === "none") {
+    const inputHeight = $("#console-input").height();
+    const originalConsoleHeight = $("#console").height();
+
+    $("#console-input").show()
+    $("#console").css("bottom", inputHeight)
+    $("#console").height(originalConsoleHeight - inputHeight)
+    $("#console-input").focus()
+  }
+}
+
+function hideConsoleInput() {
+  if ($("#console-input").css("display") !== "none") {
+    const inputHeight = $("#console-input").height();
+    const prevConsoleHeight = $("#console").height()
+
+    $("#console-input").hide()
+    $("#console").css("bottom", "0")
+    $("#console").height(prevConsoleHeight + inputHeight)
+  }
+}
+
+function multipleDialogs(questions, responses) {
   if (!responses) {
     responses = []
   }
 
-  return readlineAsPromise(questions.shift())
+  return dialogAsPromise(questions.shift())
     .then((res) => {
       responses.push(res)
 
@@ -28,8 +54,20 @@ function getMultipleResponses(questions, responses) {
         return responses
       }
 
-      return getMultipleResponses(questions, responses)
+      return multipleDialogs(questions, responses)
     })
+}
+
+function waitForInputResponse() {
+  showConsoleInput()
+  return new Promise((resolve) => {
+    $("#console-input").keypress((e) => {
+      if (e.which == 13) {
+        hideConsoleInput()
+        resolve($("#console-input").val())
+      }
+    });
+  })
 }
 
 /**
@@ -54,17 +92,17 @@ function storeData(data, path, dir) {
 
     fs.writeFile(path, writeable, (err) => {
       if (err) {
-        console.log("Error saving data:", data)
+        writeToConsole("Error saving data:", data)
         reject(err)
       }
-      console.log('Data stored to ' + path)
+      writeToConsole('Data stored to ' + path)
       resolve()
     })
   })
 }
 
 function parseAnalyticsResponse(data) {
-  const ret = { rows: []}
+  const ret = { rows: [] }
 
   data.reports.forEach((report) => {
     let header = report.columnHeader || {}
@@ -87,11 +125,4 @@ function parseAnalyticsResponse(data) {
   })
 
   return ret
-}
-
-module.exports = {
-  getMultipleResponses,
-  parseAnalyticsResponse,
-  readlineAsPromise,
-  storeData
 }
