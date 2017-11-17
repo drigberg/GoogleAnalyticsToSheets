@@ -3,9 +3,11 @@
 from apiclient.discovery import build
 from oauth2client.service_account import ServiceAccountCredentials
 import sys
+import os
+import json
 
 SCOPES = ['https://www.googleapis.com/auth/analytics.readonly']
-KEY_FILE_LOCATION = './analytics_key.json'
+KEY_FILE_LOCATION = os.path.dirname(os.path.abspath(__file__)) + '/../../analytics_key.json'
 VIEW_ID = sys.argv[1]
 
 def initialize_analyticsreporting():
@@ -51,7 +53,7 @@ def get_report(analytics):
 def main():
     analytics = initialize_analyticsreporting()
     response = get_report(analytics)
-    print response
+    print json.dumps(response).replace("'", "\\'")
 
 if __name__ == '__main__':
     main()

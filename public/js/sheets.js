@@ -4,6 +4,8 @@
 
 const google = require('googleapis')
 const googleAuth = require('google-auth-library')
+const path = require("path");
+const { spawn } = require("child_process");
 
 /**
 * Module variables
@@ -16,9 +18,9 @@ const SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 const TOKEN_DIR = (process.env.HOME || process.env.HOMEPATH ||
   process.env.USERPROFILE) + '/.credentials/'
 const TOKEN_PATH = TOKEN_DIR + 'sheets.googleapis.com-nodejs-quickstart.json'
-const CLIENT_SECRET_PATH = 'sheets_key.json'
-let view_id
-let spreadsheet_id
+const CLIENT_SECRET_PATH = path.join(__dirname, '../../sheets_key.json')
+let viewId
+let spreadsheetId
 /**
 * Module
 */
@@ -31,7 +33,7 @@ let spreadsheet_id
  * @param {Function} callback The callback to call with the authorized client.
  */
 function authorize(credentials, callback, callbackData) {
-  console.log("Getting authorization from Sheets API...")
+  writeToConsole("Getting authorization from Sheets API...")
 
   const clientSecret = credentials.installed.client_secret
   const clientId = credentials.installed.client_id
@@ -64,15 +66,12 @@ function getNewToken(oauth2Client, callback) {
     scope: SCOPES
   })
 
-  const question = 'Enter the code from that page here:'
-
-  console.log(`Authorize this app by visiting this url: ${authUrl}`)
-
-  return readlineAsPromise(question)
+  writeToConsole(`Authorize this app by visiting this url: ${authUrl}. \nEnter that code here in the input bar below and then hit enter.`)
+  return waitForInputResponse()
     .then((code) => {
       oauth2Client.getToken(code, (err, token) => {
         if (err) {
-          console.log('Error while trying to retrieve access token', err)
+          writeToConsole('Error while trying to retrieve access token', err)
           return
         }
 
@@ -91,7 +90,7 @@ function getNewToken(oauth2Client, callback) {
  *
  */
 function fetchEnv() {
-  console.log("Checking for spreadsheet id...")
+  writeToConsole("Checking for spreadsheet id...")
   return new Promise((resolve, reject) => {
     fs.readFile(ENV_PATH, (err, data) => {
       let promise = Promise.resolve()
@@ -115,10 +114,11 @@ function fetchEnv() {
 
       promise
         .then(() => {
-          let parsed = Buffer.isBuffer(data) ? JSON.parse(data) : data
-          console.log(parsed)
-          view_id = parsed.viewId
-          spreadsheet_id = parsed.spreadsheetId
+          let keyString = Buffer.isBuffer(data) ? JSON.parse(data) : data
+          const parsed = JSON.parse(keyString)
+
+          viewId = parsed.viewId
+          spreadsheetId = parsed.spreadsheetId
 
           resolve()
         })
@@ -128,7 +128,7 @@ function fetchEnv() {
 
 function writeToSheet(data) {
   return (authClient) => {
-    console.log("\nSending data to Sheets API...")
+    writeToConsole("\nSending data to Sheets API...")
     const body = {
       values: [data.headers, ...data.rows]
     }
@@ -137,15 +137,15 @@ function writeToSheet(data) {
 
     sheets.spreadsheets.values.append({
       auth: authClient,
-      spreadsheetId: spreadsheet_id,
+      spreadsheetId,
       range: "AllData!A1:Z",
       valueInputOption: "RAW",
       resource: body
     }, (err, res) => {
       if (err) {
-        console.log("Write error:", err)
+        writeToConsole("Write error:", err)
       } else {
-        console.log(`${res.updates.updatedCells} cells updated in range ${res.updates.updatedRange}.\n`)
+        writeToConsole(`${res.updates.updatedCells} cells updated in range ${res.updates.updatedRange}.\n`)
       }
     })
   }
@@ -156,50 +156,51 @@ function writeToSheet(data) {
 */
 function getAnalyticsData() {
   return new Promise((resolve, reject) => {
-    console.log("Getting analytics data...")
-    const { spawn } = require("child_process");
-    const process = spawn('python', ["./analytics.py", view_id]);
-    let data = ""
+    writeToConsole("Getting analytics data...")
+    var subpy = require('child_process').spawn('python', [path.join(__dirname, "../../public/python/analytics.py"), viewId]);
 
-    process.stdout.on('data', (chunk) => {
-      data += chunk.toString().replace(/u'/g, "'").replace(/'/g, "\"") // buffer to string
+    let pyData = ""
+
+    subpy.stdout.on('data', (chunk) => {
+      pyData += chunk.toString().replace(/u'/g, "'").replace(/'/g, "\"") // buffer to string
     });
 
-    process.stdout.on('end', () => {
-      const parsed = JSON.parse(data); // string to object
+    subpy.stdout.on('end', () => {
+      pyData = pyData.replace('", u "', '", "') // fix errors with automatic unicode parsing (eg: ["France", u "Saint-Martin-d"])
+      const parsed = JSON.parse(pyData); // string to object
       resolve(parsed)
     })
 
-    process.stdout.on('error', (err) => {
+    subpy.stdout.on('error', (err) => {
       reject(err)
     })
 
-    process.stdout.pipe(process.stdout)
-    process.stderr.pipe(process.stderr)
+    subpy.stdout.pipe(process.stdout)
+    subpy.stderr.pipe(process.stderr)
   })
 }
 
 function fetchAndSend() {
-  console.log("\n")
+  writeToConsole("\n")
   fetchEnv()
     .then(() => {
       return getAnalyticsData()
     })
     .catch((err) => {
-      console.log("Analytics error:", err)
+      writeToConsole("Analytics error:", err)
     })
     .then((data) => {
       if (!data) {
-        console.log("Error: no data received")
+        writeToConsole("Error: no data received")
         process.exit(0)
       }
 
       const parsedData = parseAnalyticsResponse(data)
-      console.log("Got analytics data!")
-      console.log("\nReading sheets client file...")
+      writeToConsole("Got analytics data!")
+      writeToConsole("\nReading sheets client file...")
       fs.readFile(CLIENT_SECRET_PATH, (err, content) => {
         if (err) {
-          console.log('Error loading client secret file: ' + err)
+          writeToConsole('Error loading client secret file: ' + err)
           return
         }
 
@@ -211,6 +212,6 @@ function fetchAndSend() {
       })
     })
     .catch((err) => {
-      console.log("Error:", err)
+      writeToConsole("Error:", err)
     })
 }

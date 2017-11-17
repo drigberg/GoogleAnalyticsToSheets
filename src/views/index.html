@@ -4,70 +4,59 @@
 <head>
   <meta charset="utf-8">
   <title>Google Analytics 2 Sheets</title>
+  <link rel="stylesheet" type="text/css" href="../../public/css/main.css">
+  <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro" rel="stylesheet">
   <meta name="google-signin-client_id" content="564478280391-lecf9d328i7leegs84sdi2c8s2jo26o0.apps.googleusercontent.com">
   <meta name="google-signin-scope" content="https://www.googleapis.com/auth/analytics.readonly">
 </head>
 
 <body>
-
-  <h1>Google Analytics 2 Sheets</h1>
-
-  <!-- The Sign-in button. This will run `queryReports()` on success. -->
-  <p class="g-signin2"></p>
-
-  <div>
-    <!-- <input id="view_id" type="text">
-    <label for="view_id">View Id</label> -->
-
-
-    <!-- <input id="spreadsheetId" type="text">
-    <label for="spreadsheetId">Spreadsheet Id</label>  -->
-
-    <!-- <input id="sheetsApiKey" type="text">
-    <label for="sheetsApiKey">Google Sheets ApiKey </label> -->
-  </div>
-
-  <div>
-    <div>
-      <h3>Metrics</h3>
-
-      <input class="metrics" id="sessions" type="checkbox">
-      <label for="sessions">Sessions</label>
-
-      <input class="metrics" id="pageLoadTime" type="checkbox">
-      <label for="pageLoadTime">Page Load Time</label>
-
-      <input class="metrics" id="timeOnPage" type="checkbox">
-      <label for="timeOnpage">Time On Page</label>
-
-    </div>
+  <div id="app">
+    <h1>Google Analytics 2 Sheets</h1>
 
     <div>
-      <h3>Dimensions</h3>
+      <div>
+        <h3>Metrics</h3>
 
-      <input class="dimensions" id="screenResolution" type="checkbox">
-      <label for="screenResolution">Screen resolution</label> <!-- ga:screenResolution -->
+        <input class="metrics" id="sessions" type="checkbox">
+        <label for="sessions">Sessions</label>
 
-      <input class="dimensions" id="city" type="checkbox">
-      <label for="city">City</label> <!-- ga:city -->
+        <input class="metrics" id="pageLoadTime" type="checkbox">
+        <label for="pageLoadTime">Page Load Time</label>
 
-      <input class="dimensions" id="country" type="checkbox">
-      <label for="country">Country</label> <!-- ga:country -->
+        <input class="metrics" id="timeOnPage" type="checkbox">
+        <label for="timeOnpage">Time On Page</label>
 
-      <input class="dimensions" id="browser" type="checkbox">
-      <label for="browser">Browser</label> <!-- ga:browser -->
+      </div>
 
-      <input class="dimensions" id="operatingSystem" type="checkbox">
-      <label for="operatingSystem">Operating System</label> <!-- ga:operatingSystem -->
+      <div>
+        <h3>Dimensions</h3>
 
-      <input class="dimensions" id="userType" type="checkbox">
-      <label for="userType">User Type</label> <!-- ga:userType -->
+        <input class="dimensions" id="screenResolution" type="checkbox">
+        <label for="screenResolution">Screen resolution</label> <!-- ga:screenResolution -->
+
+        <input class="dimensions" id="city" type="checkbox">
+        <label for="city">City</label> <!-- ga:city -->
+
+        <input class="dimensions" id="country" type="checkbox">
+        <label for="country">Country</label> <!-- ga:country -->
+
+        <input class="dimensions" id="browser" type="checkbox">
+        <label for="browser">Browser</label> <!-- ga:browser -->
+
+        <input class="dimensions" id="operatingSystem" type="checkbox">
+        <label for="operatingSystem">Operating System</label> <!-- ga:operatingSystem -->
+
+        <input class="dimensions" id="userType" type="checkbox">
+        <label for="userType">User Type</label> <!-- ga:userType -->
+      </div>
     </div>
+
+    <button type="button" id="fetch-and-send">Fetch and Send</button>
   </div>
 
-  <button type="button" id="fetch-and-send">Fetch and Send</button>
-
-  <textarea cols="80" rows="20" id="query-output"></textarea>
+  <textarea disabled cols="80" rows="20" id="console"></textarea>
+  <input type="text" id="console-input"></input>
 
 
   <pre id="content"></pre>
@@ -79,7 +68,7 @@
     crossorigin="anonymous"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.4/lodash.min.js"></script>
   <script src="../../public/js/helpers.js"></script>
-  <script src="../../public/js/main.js"></script>
+  <script src="../../public/js/listeners.js"></script>
 
   <script>if (window.module) module = window.module;</script>
 
