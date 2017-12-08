@@ -260,10 +260,15 @@ class App extends Component {
   getAnalyticsData() {
     return new Promise((resolve, reject) => {
       this.writeToConsole(`Getting analytics data with view id ${this.ids.view}`)
+      const metrics = this.form.metrics.join("-") || "sessions"
+      const dimensions = this.form.dimensions.join("-") || "city-country"
+
       const subpy = window.require('child_process').spawn('python', [
         // dear god please this needs to be cleaned somehow
         path.join(window.__dirname, "../../../../../../../../public/analytics.py"),
-        this.ids.view
+        this.ids.view,
+        metrics,
+        dimensions
       ]);
 
       let pyData = ""

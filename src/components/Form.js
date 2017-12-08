@@ -33,6 +33,20 @@ class Form extends Component {
     this.props.parent.fetchAndSend(this.state)
   }
 
+  get metrics() {
+    return Array.from(document.getElementsByClassName("metric"))
+      .filter(checkbox => checkbox.checked)
+      .map(checkbox => checkbox.id)
+  }
+
+  get dimensions() {
+    return Array.from(document.getElementsByClassName("dimension"))
+      .filter(checkbox => checkbox.checked)
+      .map(checkbox => checkbox.id)
+  }
+
+  return
+
   render() {
     return (
       <form id="form">
