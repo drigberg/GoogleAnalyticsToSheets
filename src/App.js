@@ -5,6 +5,8 @@
 import React, { Component } from 'react';
 import Form from './components/Form';
 import Console from './components/Console';
+import Readme from './components/Readme';
+import ToggleReadme from './components/ToggleReadme';
 
 // import logo from './logo.svg';
 import './main.css';
@@ -37,6 +39,7 @@ class App extends Component {
   constructor() {
     super()
     this.ids = {}
+    this.state = {}
 
     this.fetchAndSend = this.fetchAndSend.bind(this);
     this.fetchEnv = this.fetchEnv.bind(this);
@@ -330,10 +333,11 @@ class App extends Component {
   render() {
     return (
       <div id="app">
+        <ToggleReadme parent={this} />
         <h1>Google Analytics 2 Sheets</h1>
-
-        <Form parent={this} writeToConsole={this.writeToConsole}/>
-        <Console parent={this} writeToConsole={this.writeToConsole}/>
+        <Form display={this.state.readmeActive ? "none" : "block" } parent={this} writeToConsole={this.writeToConsole}/>
+        <Console display={this.state.readmeActive ? "none" : "block"} parent={this} writeToConsole={this.writeToConsole}/>
+        <Readme display={this.state.readmeActive ? "block" : "none"} />
       </div>
     );
   }

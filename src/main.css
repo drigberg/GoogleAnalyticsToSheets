@@ -10,12 +10,21 @@ body {
   padding: 10px;
 }
 
+#toggle-readme {
+  position: absolute;
+  right: 30px;
+}
+
 h1 {
   text-align: center;
 }
 
 label {
   margin: 15px;
+}
+
+.tab {
+  margin-left: 40px;
 }
 
 #console {

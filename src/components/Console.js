@@ -71,7 +71,7 @@ class Console extends Component {
     const inputDisplay = this.state.inputVisible ? "block" : "none"
 
     return (
-      <div>
+      <div style={{ display: this.props.display }}>
         <textarea style={{ bottom: consoleBottom }} disabled cols="80" rows="20" name="output" id="console" value={this.state.output}></textarea>
         <input style={{ display: inputDisplay }} type="text" name="input" id="console-input" onKeyPress={this._handleKeyPress}></input>
       </div>

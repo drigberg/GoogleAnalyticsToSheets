@@ -45,11 +45,9 @@ class Form extends Component {
       .map(checkbox => checkbox.id)
   }
 
-  return
-
   render() {
     return (
-      <form id="form">
+      <form style={{ display: this.props.display }} id="form">
         <div>
           <h3>Metrics</h3>
 
