@@ -58,7 +58,6 @@ class App extends Component {
   }
 
   fetchAndSend(text) {
-    this.console.showInput()
     this.writeToConsole("\n------\n");
     this.fetchEnv()
       .then(() => {
