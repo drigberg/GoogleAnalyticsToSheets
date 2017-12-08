@@ -9,8 +9,8 @@ import Console from './components/Console';
 // import logo from './logo.svg';
 import './main.css';
 
-const fs = window.require('fs');
-const path = window.require('path');
+const fs = window.require('fs')
+const path = window.require('path')
 const google = window.require('googleapis')
 const googleAuth = window.require('google-auth-library')
 
@@ -45,17 +45,20 @@ class App extends Component {
     this.getAnalyticsData = this.getAnalyticsData.bind(this);
     this.parseAnalyticsResponse = this.parseAnalyticsResponse.bind(this);
     this.writeToSheet = this.writeToSheet.bind(this);
-    this.authorize = this.authorize.bind(this);
-    this.getNewToken = this.getNewToken.bind(this);
-    this.waitForInputResponse = this.waitForInputResponse.bind(this);
-    this.showConsoleInput = this.showConsoleInput.bind(this);
-    this.hideConsoleInput = this.hideConsoleInput.bind(this);
+    this.queryForNewToken = this.queryForNewToken.bind(this);
+    this.createClient = this.createClient.bind(this)
     this.readToken = this.readToken.bind(this)
+    this.storeToken = this.storeToken.bind(this)
+    this.handleTokenInput = this.handleTokenInput.bind(this)
 
-    this.readToken()
+    this.createClient()
+    .then(() => {
+      this.readToken()
+    })
   }
 
   fetchAndSend(text) {
+    this.console.showInput()
     this.writeToConsole("\n------\n");
     this.fetchEnv()
       .then(() => {
@@ -69,18 +72,9 @@ class App extends Component {
         const parsedData = this.parseAnalyticsResponse(data)
 
         this.writeToConsole("Got analytics data!\nReading sheets client file...")
-        fs.readFile(CLIENT_SECRET_PATH, (err, content) => {
-          if (err) {
-            this.writeToConsole(`Error loading client secret file: ${err.message}`)
-            return
-          }
+        const writer = this.writeToSheet(parsedData)
 
-          // Authorize a client with the loaded credentials, then call the
-          // Google Sheets API.
-          const writer = this.writeToSheet(parsedData)
-          const parsedSecret = JSON.parse(content)
-          this.authorize(parsedSecret, writer)
-        })
+        return writer(this.form.state.oauth2Client);
       })
       .catch((err) => {
         this.writeToConsole(`Error: ${err.message}`)
@@ -88,121 +82,91 @@ class App extends Component {
       })
   }
 
-    /**
-   * Create an OAuth2 client with the given credentials, and then execute the
-   * given callback function.
-   *
-   * @param {Object} credentials The authorization client credentials.
-   * @param {Function} callback The callback to call with the authorized client.
-   */
-  authorize(credentials, callback, callbackData) {
-    this.writeToConsole("Getting authorization from Sheets API...")
 
-    const clientId = credentials.installed.client_id
-    const clientSecret = credentials.installed.client_secret
-    const redirectUrl = credentials.installed.redirect_uris[0]
+  createClient() {
+    return new Promise((resolve, reject) => {
+      fs.readFile(CLIENT_SECRET_PATH, (err, content) => {
+        if (err) {
+          this.writeToConsole(`Error loading client secret file: ${err.message}`)
+          reject(err)
+        }
 
-    const auth = new googleAuth()
-    const oauth2Client = new auth.OAuth2(clientId, clientSecret, redirectUrl)
-    oauth2Client.credentials = this.form.state.oauthToken
+        const parsedSecret = JSON.parse(content)
 
-    return callback(oauth2Client)
-  }
+        // Authorize a client with the loaded credentials, then call the
+        // Google Sheets API.
+        const clientId = parsedSecret.installed.client_id
+        const clientSecret = parsedSecret.installed.client_secret
+        const redirectUrl = parsedSecret.installed.redirect_uris[0]
 
-  /**
-   * Get and store new token after prompting for user authorization, and then
-   * execute the given callback with the authorized OAuth2 client.
-   *
-   * @param {google.auth.OAuth2} oauth2Client The OAuth2 client to get token for.
-   * @param {getEventsCallback} callback The callback to call with the authorized
-   *     client.
-   */
-  getNewTokenOld(oauth2Client, callback) {
-    const authUrl = oauth2Client.generateAuthUrl({
-      access_type: 'offline',
-      scope: SCOPES
-    })
+        const auth = new googleAuth()
+        const oauth2Client = new auth.OAuth2(clientId, clientSecret, redirectUrl)
 
-    this.writeToConsole(`Authorize this app by visiting this url: ${authUrl}. \nEnter that code here in the input bar below and then hit enter.`)
-    return this.waitForInputResponse()
-      .then((code) => {
-        oauth2Client.getToken(code, (err, token) => {
-          if (err) {
-            this.writeToConsole('Error while trying to retrieve access token', err)
-            return
-          }
-
-          oauth2Client.credentials = token
-          return this.storeData(token, TOKEN_PATH, TOKEN_DIR)
-            .then(() => {
-              return callback(oauth2Client)
-            })
-        })
-      })
-  }
-
-
-  /**
-   * Get and store new token after prompting for user authorization, and then
-   * execute the given callback with the authorized OAuth2 client.
-   *
-   * @param {google.auth.OAuth2} oauth2Client The OAuth2 client to get token for.
-   * @param {getEventsCallback} callback The callback to call with the authorized
-   *     client.
-   */
-  getNewToken(oauth2Client, callback) {
-    const authUrl = oauth2Client.generateAuthUrl({
-      access_type: 'offline',
-      scope: SCOPES
-    })
-
-    this.writeToConsole(`Authorize this app by visiting this url: ${authUrl}. \nEnter that code here in the input bar below and then hit enter.`)
-    return this.waitForInputResponse()
-      .then((code) => {
-        oauth2Client.getToken(code, (err, token) => {
-          if (err) {
-            this.writeToConsole('Error while trying to retrieve access token', err)
-            return
-          }
-
-          oauth2Client.credentials = token
-          return this.storeData(token, TOKEN_PATH, TOKEN_DIR)
-            .then(() => {
-              return callback(oauth2Client)
-            })
-        })
-      })
-  }
-
-    /**
-   * Get and store new token after prompting for user authorization, and then
-   * execute the given callback with the authorized OAuth2 client.
-   *
-   * @param {google.auth.OAuth2} oauth2Client The OAuth2 client to get token for.
-   * @param {getEventsCallback} callback The callback to call with the authorized
-   *     client.
-   */
-  readToken(oauth2Client, callback) {
-    fs.readFile(TOKEN_PATH, (err, token) => {
-      if (token) {
-        const parsed = JSON.parse(token)
-        const newFormState = Object.assign({}, this.form.state, { oauthToken: parsed })
+        const newFormState = Object.assign({}, this.form.state, { oauth2Client })
         this.form.setState(newFormState)
-      }
+        resolve()
+      })
     })
   }
 
-  waitForInputResponse() {
-    this.showConsoleInput()
-    return new Promise((resolve) => {
 
+  storeToken(token) {
+    return this.storeData(token, TOKEN_PATH, TOKEN_DIR)
+  }
+
+  /**
+   * Get credentials
+   */
+  readToken() {
+    fs.readFile(TOKEN_PATH, (err, token) => {
+      if (err || !token) {
+        this.queryForNewToken()
+        return
+      }
+
+      const parsedToken = JSON.parse(token)
+
+      const newClient = this.form.state.oauth2Client
+      newClient.credentials = parsedToken
+      const newFormState = Object.assign({}, this.form.state, { oauth2Client: newClient })
+
+      this.form.setState(newFormState)
     })
-      // $("#console-input").keypress((e) => {
-      //   if (e.which == 13) {
-      //     this.hideConsoleInput()
-      //     resolve($("#console-input").val())
-      //   }
-      // });
+  }
+
+  /**
+   * Ask user for new auth token
+   *
+   * @param {google.auth.OAuth2} oauth2Client The OAuth2 client to get token for.
+   * @param {getEventsCallback} callback The callback to call with the authorized
+   *     client.
+   */
+  queryForNewToken(callback) {
+    const oauth2Client = this.form.state.oauth2Client
+    const authUrl = oauth2Client.generateAuthUrl({
+      access_type: 'offline',
+      scope: SCOPES
+    })
+
+    this.writeToConsole(`Authorize this app by visiting this url: ${authUrl} \nEnter that code here in the input bar below and then hit enter.`)
+    this.console.showInput('handleTokenInput')
+  }
+
+  handleTokenInput(input) {
+    this.form.state.oauth2Client.getToken(input, (err, token) => {
+      if (err) {
+        this.writeToConsole('Error while trying to retrieve access token', err)
+        return
+      }
+
+      const newClient = this.form.state.oauth2Client
+      newClient.credentials = token
+      const newState = Object.assign({}, this.state, { oauth2Client: newClient })
+
+      this.form.setState(newState)
+
+      return this.storeToken(token)
+    })
   }
 
   writeToSheet(data) {
@@ -234,11 +198,9 @@ class App extends Component {
     const ret = { rows: [] }
 
     data.reports.forEach((report) => {
-      let header = report.columnHeader || {}
-      let dimensionHeaders = header.dimensions ? Object.assign({}, header.dimensions) : []
+      let dimensionHeaders = (report.columnHeader && report.columnHeader.dimensions) || []
+      // let metricHeaders = (report.metricHeader && report.metricHeader.metricHeaderEntries) || []
       let headers = ["Date Range", ...dimensionHeaders, "Sessions"]
-
-      // let metricHeaders = (header.metricHeader && header.metricHeader.metricHeaderEntries) || []
 
       Object.assign(ret, { headers })
 
@@ -321,29 +283,6 @@ class App extends Component {
         reject(err)
       })
     })
-  }
-
-  showConsoleInput() {
-    // if ($("#console-input").css("display") === "none") {
-    //   const inputHeight = $("#console-input").height();
-    //   const originalConsoleHeight = $("#console").height();
-
-    //   $("#console-input").show()
-    //   $("#console").css("bottom", inputHeight)
-    //   $("#console").height(originalConsoleHeight - inputHeight)
-    //   $("#console-input").focus()
-    // }
-  }
-
-  hideConsoleInput() {
-    // if ($("#console-input").css("display") !== "none") {
-    //   const inputHeight = $("#console-input").height();
-    //   const prevConsoleHeight = $("#console").height()
-
-    //   $("#console-input").hide()
-    //   $("#console").css("bottom", "0")
-    //   $("#console").height(prevConsoleHeight + inputHeight)
-    // }
   }
 
   /**

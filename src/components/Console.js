@@ -8,6 +8,8 @@ class Console extends Component {
 
     this.props.parent.console = this;
     this.state = {
+      inputHandler: null,
+      inputVisible: false,
       output: ""
     }
     this.dialogAsPromise = this.dialogAsPromise.bind(this);
@@ -21,6 +23,20 @@ class Console extends Component {
         resolve(res)
       })
     })
+  }
+
+  showInput(handler) {
+    if (!this.state.inputHandler) {
+      const newState = Object.assign(this.state, { inputVisible: true, inputHandler: handler })
+
+      this.setState(newState)
+    }
+  }
+
+  hideInput() {
+    const newState = Object.assign(this.state, { inputVisible: false, inputHandler: null })
+
+    this.setState(newState)
   }
 
   multipleDialogs(questions, responses) {
@@ -41,20 +57,23 @@ class Console extends Component {
   }
 
   _handleKeyPress(event) {
-    const newState = Object.assign({}, this.state, { input: event.target.value })
-
-    this.setState(newState)
     if (event.key === 'Enter') {
-      console.log(this.state)
-      console.log("ENTER!!!!")
+      const handler = this.state.inputHandler
+      const payload = event.target.value
+
+      this.props.parent[handler](payload)
+      this.hideInput()
     }
   }
 
   render() {
+    const consoleBottom = this.state.inputVisible ? 30 : 0
+    const inputDisplay = this.state.inputVisible ? "block" : "none"
+
     return (
       <div>
-        <textarea disabled cols="80" rows="20" name="output" id="console" value={this.state.output}></textarea>
-        <input type="text" name="input" id="console-input3" onKeyPress={this._handleKeyPress}></input>
+        <textarea style={{ bottom: consoleBottom }} disabled cols="80" rows="20" name="output" id="console" value={this.state.output}></textarea>
+        <input style={{ display: inputDisplay }} type="text" name="input" id="console-input" onKeyPress={this._handleKeyPress}></input>
       </div>
     );
   }

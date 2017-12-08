@@ -10,7 +10,7 @@ class Form extends Component {
     this.state = {
       metric: {},
       dimension: {},
-      oauthToken: null
+      oauth2Client: {}
     };
 
     this.props.parent.form = this;
@@ -55,8 +55,8 @@ class Form extends Component {
           <Checkbox className="dimension" name="userType" />
         </div>
 
-        <button disabled={!this.state.oauthToken} type="button" onClick={this.fetchAndSend}>Fetch and Send</button>
-        <button disabled={this.state.oauthToken} type="button" onClick={this.props.parent.getNewToken}>Get New Auth Token</button>
+        <button disabled={!this.state.oauth2Client || !this.state.oauth2Client.credentials} type="button" onClick={this.fetchAndSend}>Fetch and Send</button>
+        <button disabled={this.state.oauth2Client && this.state.oauth2Client.credentials} type="button" onClick={this.props.parent.getNewToken}>Get New Auth Token</button>
 
         <textarea disabled cols="80" rows="20" id="console"></textarea>
         <input type="text" id="console-input"></input>

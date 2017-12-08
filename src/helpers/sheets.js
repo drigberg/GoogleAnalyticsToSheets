@@ -69,19 +69,7 @@ function getNewToken(oauth2Client, callback) {
 
   writeToConsole(`Authorize this app by visiting this url: ${authUrl}. \nEnter that code here in the input bar below and then hit enter.`)
   return waitForInputResponse()
-    .then((code) => {
-      oauth2Client.getToken(code, (err, token) => {
-        if (err) {
-          writeToConsole('Error while trying to retrieve access token', err)
-          return
-        }
-
-        oauth2Client.credentials = token
-        return storeData(token, TOKEN_PATH, TOKEN_DIR)
-          .then(() => {
-            return callback(oauth2Client)
-          })
-      })
+    .then(
     })
 }
 
