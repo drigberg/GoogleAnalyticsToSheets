@@ -7,7 +7,7 @@ import os
 import json
 
 SCOPES = ['https://www.googleapis.com/auth/analytics.readonly']
-KEY_FILE_LOCATION = os.path.dirname(os.path.abspath(__file__)) + '/../../analytics_key.json'
+KEY_FILE_LOCATION = os.path.dirname(os.path.abspath(__file__)) + '/../analytics_key.json'
 VIEW_ID = sys.argv[1]
 
 def initialize_analyticsreporting():
@@ -32,20 +32,29 @@ def get_report(analytics):
     Returns:
         The Analytics Reporting API V4 response.
     """
+
+    metricsInput = sys.argv[2].split("-")
+    dimensionsInput = sys.argv[3].split("-")
+
+    metrics = []
+    dimensions = []
+
+    for i in range(len(metricsInput)):
+        expression = 'ga:' + metricsInput[i]
+        metrics.append({'expression': expression})
+
+    for i in range(len(dimensionsInput)):
+        name = 'ga:' + dimensionsInput[i]
+        dimensions.append({'name': name})
+
     return analytics.reports().batchGet(
         body={
             'reportRequests': [
             {
                 'viewId': VIEW_ID,
                 'dateRanges': [{'startDate': '7daysAgo', 'endDate': 'today'}],
-                'metrics': [{'expression': 'ga:sessions'}],
-                'dimensions': [
-                    {'name': 'ga:country'},
-                    {'name': 'ga:city'},
-                    {'name': 'ga:userType'},
-                    {'name': 'ga:browser'},
-                    {'name': 'ga:operatingSystem'}
-                ]
+                'metrics': metrics,
+                'dimensions': dimensions
             }]
         }
     ).execute()

@@ -7,13 +7,12 @@
  * Module dependencies
  */
 const { app } = require('electron')
-const { createWindow } = require('./lib/window')
+const { createWindow, mainWindow } = require('./lib/window')
 
 /**
  * Module
  */
 
-let mainWindow
 
 app.setName('Google Analytics 2 Sheets');
 
