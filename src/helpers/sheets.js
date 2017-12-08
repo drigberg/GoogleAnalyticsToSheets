@@ -2,6 +2,7 @@
 * Module dependencies
 */
 
+const fs = window.require('fs')
 const google = require('googleapis')
 const googleAuth = require('google-auth-library')
 const path = require("path");
@@ -151,34 +152,7 @@ function writeToSheet(data) {
   }
 }
 
-/**
-* Module execution
-*/
-function getAnalyticsData() {
-  return new Promise((resolve, reject) => {
-    writeToConsole("Getting analytics data...")
-    var subpy = require('child_process').spawn('python', [path.join(__dirname, "../../public/python/analytics.py"), viewId]);
 
-    let pyData = ""
-
-    subpy.stdout.on('data', (chunk) => {
-      pyData += chunk.toString().replace(/u'/g, "'").replace(/'/g, "\"") // buffer to string
-    });
-
-    subpy.stdout.on('end', () => {
-      pyData = pyData.replace('", u "', '", "') // fix errors with automatic unicode parsing (eg: ["France", u "Saint-Martin-d"])
-      const parsed = JSON.parse(pyData); // string to object
-      resolve(parsed)
-    })
-
-    subpy.stdout.on('error', (err) => {
-      reject(err)
-    })
-
-    subpy.stdout.pipe(process.stdout)
-    subpy.stderr.pipe(process.stderr)
-  })
-}
 
 function fetchAndSend() {
   writeToConsole("\n")
@@ -215,3 +189,4 @@ function fetchAndSend() {
       writeToConsole("Error:", err)
     })
 }
+

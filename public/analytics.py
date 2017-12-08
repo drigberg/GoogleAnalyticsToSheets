@@ -7,7 +7,7 @@ import os
 import json
 
 SCOPES = ['https://www.googleapis.com/auth/analytics.readonly']
-KEY_FILE_LOCATION = os.path.dirname(os.path.abspath(__file__)) + '/../../analytics_key.json'
+KEY_FILE_LOCATION = os.path.dirname(os.path.abspath(__file__)) + '/../analytics_key.json'
 VIEW_ID = sys.argv[1]
 
 def initialize_analyticsreporting():
