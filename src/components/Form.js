@@ -33,6 +33,26 @@ class Form extends Component {
     this.props.parent.fetchAndSend(this.state)
   }
 
+  get dateRange() {
+    const pad = (number) => ("0" + String(number)).slice(-2)
+    
+    let start = document.getElementById("dateStart").value
+    let end = document.getElementById("dateEnd").value
+
+
+    if (!start || !end || Date.parse(end) < Date.parse(start)) {
+      return null
+    }
+
+    start = new Date(start)
+    end = new Date(end)
+    
+    start = `${start.getFullYear()}-${pad(start.getMonth())}-${pad(start.getDay())}`
+    end = `${end.getFullYear()}-${pad(end.getMonth())}-${pad(end.getDay())}`
+    
+    return { start, end }
+  }
+
   get metrics() {
     return Array.from(document.getElementsByClassName("metric"))
       .filter(checkbox => checkbox.checked)
@@ -65,6 +85,25 @@ class Form extends Component {
           <Checkbox className="dimension" name="browser" />
           <Checkbox className="dimension" name="operatingSystem" />
           <Checkbox className="dimension" name="userType" />
+        </div>
+
+        <div>
+          <label>
+            Date Range Start
+          <input
+              type="date"
+              name="dateStart"
+              id="dateStart"
+            />
+          </label>
+          <label>
+            Date Range End
+          <input
+              type="date"
+              name="dateEnd"
+              id="dateEnd"
+            />
+          </label>
         </div>
 
         <button disabled={!this.state.oauth2Client || !this.state.oauth2Client.credentials} type="button" onClick={this.fetchAndSend}>Fetch and Send</button>

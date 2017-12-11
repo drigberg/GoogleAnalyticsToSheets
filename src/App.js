@@ -73,6 +73,8 @@ class App extends Component {
 
         const parsedData = this.parseAnalyticsResponse(data)
 
+        console.log(parsedData)
+
         this.writeToConsole("Got analytics data!\nReading sheets client file...")
         const writer = this.writeToSheet(parsedData)
 
@@ -247,11 +249,14 @@ class App extends Component {
         promise
           .then(() => {
             let keyString = Buffer.isBuffer(data) ? JSON.parse(data) : data
-            const parsed = JSON.parse(keyString)
-            const parsedTwice = JSON.parse(parsed)
+            let parsed = JSON.parse(keyString)
 
-            this.ids.view = parsedTwice.viewId
-            this.ids.spreadsheet = parsedTwice.spreadsheetId
+            if (typeof parsed !== "object") {
+              parsed = JSON.parse(parsed)
+            }
+
+            this.ids.view = parsed.viewId
+            this.ids.spreadsheet = parsed.spreadsheetId
 
             resolve()
           })
@@ -262,6 +267,8 @@ class App extends Component {
   getAnalyticsData() {
     return new Promise((resolve, reject) => {
       this.writeToConsole(`Getting analytics data with view id ${this.ids.view}`)
+      const dates = this.form.dateRange
+      console.log(dates)
       const metrics = this.form.metrics.join("-") || "sessions"
       const dimensions = this.form.dimensions.join("-") || "city-country"
 
@@ -270,7 +277,9 @@ class App extends Component {
         path.join(window.__dirname, "../../../../../../../../public/analytics.py"),
         this.ids.view,
         metrics,
-        dimensions
+        dimensions,
+        dates.start,
+        dates.end
       ]);
 
       let pyData = ""
