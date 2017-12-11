@@ -1,16 +1,11 @@
 import React, { Component } from 'react';
 import Checkbox from './Checkbox';
-// import analytics from './helpers/analytics';
-// import helpers from './helpers/helpers';
-// import sheets from './helpers/sheets';
+import { addCheckbox, removeCheckbox } from '../actions'
+import { connect } from 'react-redux'
 
 class Form extends Component {
   constructor(props) {
     super(props);
-    this.state = {
-      metric: {},
-      dimension: {}
-    };
 
     this.props.parent.form = this;
 
@@ -20,16 +15,17 @@ class Form extends Component {
 
   handleInputChange(event) {
     const target = event.target;
-    const value = target.type === 'checkbox' ? target.checked : target.value;
 
-    const newState = Object.assign({}, this.state)
-    newState[target.className][target.name] = value
+    if (target.checked) {
+      this.props.dispatch(addCheckbox(target.className, target.name))
+      return
+    }
 
-    this.setState(newState);
+    this.props.dispatch(removeCheckbox(target.className, target.name))
   }
 
   fetchAndSend() {
-    this.props.parent.fetchAndSend(this.state)
+    this.props.parent.fetchAndSend()
   }
 
   get metrics() {
@@ -52,20 +48,20 @@ class Form extends Component {
         <div>
           <h3>Metrics</h3>
 
-          <Checkbox className="metric" name="sessions" clickHandler={this.handleInputChange} />
-          <Checkbox className="metric" name="pageLoadTime" clickHandler={this.handleInputChange} />
-          <Checkbox className="metric" name="timeOnPage" clickHandler={this.handleInputChange} />
+          <Checkbox className="metrics" name="sessions" clickHandler={this.handleInputChange} />
+          <Checkbox className="metrics" name="pageLoadTime" clickHandler={this.handleInputChange} />
+          <Checkbox className="metrics" name="timeOnPage" clickHandler={this.handleInputChange} />
         </div>
 
         <div>
           <h3>Dimensions</h3>
 
-          <Checkbox className="dimension" name="screenResolution" />
-          <Checkbox className="dimension" name="city" />
-          <Checkbox className="dimension" name="country" />
-          <Checkbox className="dimension" name="browser" />
-          <Checkbox className="dimension" name="operatingSystem" />
-          <Checkbox className="dimension" name="userType" />
+          <Checkbox className="dimensions" name="screenResolution" clickHandler={this.handleInputChange} />
+          <Checkbox className="dimensions" name="city" clickHandler={this.handleInputChange} />
+          <Checkbox className="dimensions" name="country" clickHandler={this.handleInputChange} />
+          <Checkbox className="dimensions" name="browser" clickHandler={this.handleInputChange} />
+          <Checkbox className="dimensions" name="operatingSystem" clickHandler={this.handleInputChange} />
+          <Checkbox className="dimensions" name="userType" clickHandler={this.handleInputChange} />
         </div>
 
         <button disabled={sendEnabled} type="button" onClick={this.fetchAndSend}>Fetch and Send</button>
@@ -78,4 +74,13 @@ class Form extends Component {
   }
 }
 
-export default Form;
+
+const mapStateToProps = state => {
+  const { form } = state
+
+  return { form }
+}
+
+const ConnectedForm = connect(mapStateToProps)(Form)
+
+export default ConnectedForm;

@@ -62,7 +62,7 @@ class App extends Component {
     })
   }
 
-  fetchAndSend(text) {
+  fetchAndSend() {
     this.writeToConsole("\n------\n");
     this.fetchEnv()
       .then(() => {
@@ -262,10 +262,21 @@ class App extends Component {
   }
 
   getAnalyticsData() {
+    const { form } = this.props
     return new Promise((resolve, reject) => {
       this.writeToConsole(`Getting analytics data with view id ${this.ids.view}`)
-      const metrics = this.form.metrics.join("-") || "sessions"
-      const dimensions = this.form.dimensions.join("-") || "city-country"
+      // console.log(form && form.metric & Object.keys(form.metric).length)
+
+      let metrics = "sessions"
+      let dimensions = "city-country"
+
+      if (form && form.metrics.length) {
+        metrics = form.metrics.join("-")
+      }
+
+      if (form && form.dimensions.length) {
+        dimensions = form.dimensions.join("-")
+      }
 
       const subpy = window.require('child_process').spawn('python', [
         // dear god please this needs to be cleaned somehow
@@ -348,9 +359,9 @@ class App extends Component {
 }
 
 const mapStateToProps = state => {
-  const { client, console } = state
+  const { client, console, form } = state
 
-  return { client, console }
+  return { client, console, form }
 }
 
 

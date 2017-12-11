@@ -341,3 +341,15 @@ export const saveOAuth2Client = oauth2Client => ({
   type: 'saveOAuth2Client',
   oauth2Client
 })
+
+export const addCheckbox = (className, id, value) => ({
+  type: 'addCheckbox',
+  className,
+  id
+})
+
+export const removeCheckbox = (className, id, value) => ({
+  type: 'removeCheckbox',
+  className,
+  id
+})
