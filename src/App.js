@@ -3,10 +3,12 @@
  */
 
 import React, { Component } from 'react';
+import { connect } from 'react-redux'
 import Form from './components/Form';
 import Console from './components/Console';
 import Readme from './components/Readme';
 import ToggleReadme from './components/ToggleReadme';
+import { saveOAuth2Client } from './actions';
 
 // import logo from './logo.svg';
 import './main.css';
@@ -76,7 +78,7 @@ class App extends Component {
         this.writeToConsole("Got analytics data!\nReading sheets client file...")
         const writer = this.writeToSheet(parsedData)
 
-        return writer(this.form.state.oauth2Client);
+        return writer(this.props.client);
       })
       .catch((err) => {
         this.writeToConsole(`Error: ${err.message}`)
@@ -104,8 +106,8 @@ class App extends Component {
         const auth = new googleAuth()
         const oauth2Client = new auth.OAuth2(clientId, clientSecret, redirectUrl)
 
-        const newFormState = Object.assign({}, this.form.state, { oauth2Client })
-        this.form.setState(newFormState)
+        this.props.dispatch(saveOAuth2Client(oauth2Client))
+
         resolve()
       })
     })
@@ -120,6 +122,8 @@ class App extends Component {
    * Get credentials
    */
   readToken() {
+    const { client } = this.props
+
     fs.readFile(TOKEN_PATH, (err, token) => {
       if (err || !token) {
         this.queryForNewToken()
@@ -127,12 +131,9 @@ class App extends Component {
       }
 
       const parsedToken = JSON.parse(token)
+      client.credentials = parsedToken
 
-      const newClient = this.form.state.oauth2Client
-      newClient.credentials = parsedToken
-      const newFormState = Object.assign({}, this.form.state, { oauth2Client: newClient })
-
-      this.form.setState(newFormState)
+      this.props.dispatch(saveOAuth2Client(client))
     })
   }
 
@@ -144,8 +145,9 @@ class App extends Component {
    *     client.
    */
   queryForNewToken(callback) {
-    const oauth2Client = this.form.state.oauth2Client
-    const authUrl = oauth2Client.generateAuthUrl({
+    const { client } = this.props
+
+    const authUrl = client.generateAuthUrl({
       access_type: 'offline',
       scope: SCOPES
     })
@@ -155,17 +157,17 @@ class App extends Component {
   }
 
   handleTokenInput(input) {
-    this.form.state.oauth2Client.getToken(input, (err, token) => {
+    const { client } = this.props
+
+    client.getToken(input, (err, token) => {
       if (err) {
         this.writeToConsole('Error while trying to retrieve access token', err)
         return
       }
 
-      const newClient = this.form.state.oauth2Client
-      newClient.credentials = token
-      const newState = Object.assign({}, this.state, { oauth2Client: newClient })
+      client.credentials = token
 
-      this.form.setState(newState)
+      this.props.dispatch(saveOAuth2Client(client))
 
       return this.storeToken(token)
     })
@@ -331,16 +333,27 @@ class App extends Component {
   }
 
   render() {
+    const { readmeActive } = this.props
+
     return (
       <div id="app">
         <ToggleReadme parent={this} />
         <h1>Google Analytics 2 Sheets</h1>
-        <Form display={this.state.readmeActive ? "none" : "block" } parent={this} writeToConsole={this.writeToConsole}/>
-        <Console display={this.state.readmeActive ? "none" : "block"} parent={this} writeToConsole={this.writeToConsole}/>
-        <Readme display={this.state.readmeActive ? "block" : "none"} />
+        <Form display={readmeActive ? "none" : "block" } parent={this} writeToConsole={this.writeToConsole} />
+        <Console display={readmeActive ? "none" : "block"} parent={this} writeToConsole={this.writeToConsole} />
+        <Readme display={readmeActive ? "block" : "none"} />
       </div>
     );
   }
 }
 
-export default App;
+const mapStateToProps = state => {
+  const { client, console } = state
+
+  return { client, console }
+}
+
+
+const ConnectedApp = connect(mapStateToProps)(App)
+
+export default ConnectedApp;
