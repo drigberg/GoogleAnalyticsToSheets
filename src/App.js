@@ -208,19 +208,28 @@ class App extends Component {
     const ret = { rows: [] }
 
     data.reports.forEach((report) => {
-      let dimensionHeaders = (report.columnHeader && report.columnHeader.dimensions) || []
-      // let metricHeaders = (report.metricHeader && report.metricHeader.metricHeaderEntries) || []
-      let headers = ["Date Range Start", "Date Range End", ...dimensionHeaders, "Sessions"]
+      const header = report.columnHeader
+      const dimensionHeaders = (header && header.dimensions) || []
+      const metricHeaders = ((header && header.metricHeader && header.metricHeader.metricHeaderEntries) || [])
+        .map(item => item.name)
+
+      const headers = [
+        "Date Range Start",
+        "Date Range End",
+        ...metricHeaders,
+        ...dimensionHeaders
+      ]
+        .map(header => header.replace('ga:', ''))
 
       Object.assign(ret, { headers })
 
       report.data.rows.forEach((row) => {
-        let dimensions = row.dimensions || []
-        let dateRangeValues = row.metrics || []
+        const dimensions = row.dimensions || []
+        const metrics = row.metrics || []
 
-        for (let i = 0; i < dateRangeValues.length; i++) {
-          let values = dateRangeValues[i]
-          ret.rows.push([dateRange.start, dateRange.end, ...dimensions, values.values[0]])
+        for (let i = 0; i < metrics.length; i++) {
+          let metric = metrics[i]
+          ret.rows.push([dateRange.start, dateRange.end, ...metric.values, ...dimensions])
         }
       })
     })
@@ -302,6 +311,8 @@ class App extends Component {
         } catch (err) {
           reject(new Error("Received error from Google Analytics API -- be sure that your dates make sense and that your dimensions and metrics can be used in combination with each other."))
         }
+
+        console.log(parsed)
 
         resolve(parsed)
       })
