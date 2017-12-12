@@ -29,7 +29,10 @@ const TOKEN_DIR = (window.process.env.HOME
   || window.process.env.HOMEPATH
   || window.process.env.USERPROFILE) + '/.credentials/'
 const TOKEN_PATH = TOKEN_DIR + 'sheets.googleapis.com-nodejs-quickstart.json'
-const CLIENT_SECRET_PATH = path.join(window.__dirname, '../../../../../../../../sheets_key.json')
+console.log(window.__dirname)
+console.log(path.join(window.__dirname, '../sheets_key.json'))
+
+const CLIENT_SECRET_PATH = path.join(window.__dirname, '../sheets_key.json')
 
 /**
  * Module
@@ -288,7 +291,7 @@ class App extends Component {
 
       const subpy = window.require('child_process').spawn('python', [
         // dear god please this needs to be cleaned somehow
-        path.join(window.__dirname, "../../../../../../../../public/analytics.py"),
+        path.join(window.__dirname, "../public/analytics.py"),
         this.ids.view,
         metrics,
         dimensions,
