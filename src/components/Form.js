@@ -1,8 +1,5 @@
 import React, { Component } from 'react';
 import Checkbox from './Checkbox';
-// import analytics from './helpers/analytics';
-// import helpers from './helpers/helpers';
-// import sheets from './helpers/sheets';
 
 class Form extends Component {
   constructor(props) {
@@ -33,23 +30,19 @@ class Form extends Component {
     this.props.parent.fetchAndSend(this.state)
   }
 
-  get dateRange() {
-    const pad = (number) => ("0" + String(number)).slice(-2)
-    
+  getDateRange() {
+    // temp catch
+    if (!document.getElementById("dateStart") || !document.getElementById("dateStart")) {
+      return null
+    }
+
     let start = document.getElementById("dateStart").value
     let end = document.getElementById("dateEnd").value
-
 
     if (!start || !end || Date.parse(end) < Date.parse(start)) {
       return null
     }
 
-    start = new Date(start)
-    end = new Date(end)
-    
-    start = `${start.getFullYear()}-${pad(start.getMonth())}-${pad(start.getDay())}`
-    end = `${end.getFullYear()}-${pad(end.getMonth())}-${pad(end.getDay())}`
-    
     return { start, end }
   }
 
@@ -72,14 +65,20 @@ class Form extends Component {
           <h3>Metrics</h3>
 
           <Checkbox className="metric" name="sessions" clickHandler={this.handleInputChange} />
+          <Checkbox className="metric" name="users" clickHandler={this.handleInputChange} />
+          <Checkbox className="metric" name="bounceRate" clickHandler={this.handleInputChange} />
           <Checkbox className="metric" name="pageLoadTime" clickHandler={this.handleInputChange} />
           <Checkbox className="metric" name="timeOnPage" clickHandler={this.handleInputChange} />
+          <Checkbox className="metric" name="pageviewsPerSession" clickHandler={this.handleInputChange} />
+          <Checkbox className="metric" name="sessionDuration" clickHandler={this.handleInputChange} />
         </div>
 
         <div>
           <h3>Dimensions</h3>
-
           <Checkbox className="dimension" name="screenResolution" />
+          <Checkbox className="dimension" name="source" />
+          <Checkbox className="dimension" name="referralPath" />
+          <Checkbox className="dimension" name="keyword" />
           <Checkbox className="dimension" name="city" />
           <Checkbox className="dimension" name="country" />
           <Checkbox className="dimension" name="browser" />
@@ -87,7 +86,7 @@ class Form extends Component {
           <Checkbox className="dimension" name="userType" />
         </div>
 
-        <div>
+        <div id="dates">
           <label>
             Date Range Start
           <input

@@ -64,21 +64,27 @@ class App extends Component {
     this.writeToConsole("\n------\n");
     this.fetchEnv()
       .then(() => {
-        return this.getAnalyticsData()
-      })
-      .then((data) => {
-        if (!data) {
-          this.writeToConsole("Error: no data received")
+        const dateRange = this.form.getDateRange()
+
+        if (!dateRange) {
+          this.writeToConsole("Please be sure that date range is provided, and that start is before end.")
+
+          return null
         }
 
-        const parsedData = this.parseAnalyticsResponse(data)
+        return this.getAnalyticsData(dateRange)
+          .then((data) => {
+            if (!data) {
+              this.writeToConsole("Error: no data received")
+            }
 
-        console.log(parsedData)
+            const parsedData = this.parseAnalyticsResponse(data, dateRange)
 
-        this.writeToConsole("Got analytics data!\nReading sheets client file...")
-        const writer = this.writeToSheet(parsedData)
+            this.writeToConsole("Got analytics data!\nReading sheets client file...")
+            const writer = this.writeToSheet(parsedData)
 
-        return writer(this.form.state.oauth2Client);
+            return writer(this.form.state.oauth2Client);
+          })
       })
       .catch((err) => {
         this.writeToConsole(`Error: ${err.message}`)
@@ -198,13 +204,13 @@ class App extends Component {
     }
   }
 
-  parseAnalyticsResponse(data) {
+  parseAnalyticsResponse(data, dateRange) {
     const ret = { rows: [] }
 
     data.reports.forEach((report) => {
       let dimensionHeaders = (report.columnHeader && report.columnHeader.dimensions) || []
       // let metricHeaders = (report.metricHeader && report.metricHeader.metricHeaderEntries) || []
-      let headers = ["Date Range", ...dimensionHeaders, "Sessions"]
+      let headers = ["Date Range Start", "Date Range End", ...dimensionHeaders, "Sessions"]
 
       Object.assign(ret, { headers })
 
@@ -214,7 +220,7 @@ class App extends Component {
 
         for (let i = 0; i < dateRangeValues.length; i++) {
           let values = dateRangeValues[i]
-          ret.rows.push([i, ...dimensions, values.values[0]])
+          ret.rows.push([dateRange.start, dateRange.end, ...dimensions, values.values[0]])
         }
       })
     })
@@ -264,11 +270,10 @@ class App extends Component {
     })
   }
 
-  getAnalyticsData() {
+  getAnalyticsData(dateRange) {
     return new Promise((resolve, reject) => {
       this.writeToConsole(`Getting analytics data with view id ${this.ids.view}`)
-      const dates = this.form.dateRange
-      console.log(dates)
+
       const metrics = this.form.metrics.join("-") || "sessions"
       const dimensions = this.form.dimensions.join("-") || "city-country"
 
@@ -278,8 +283,8 @@ class App extends Component {
         this.ids.view,
         metrics,
         dimensions,
-        dates.start,
-        dates.end
+        dateRange.start,
+        dateRange.end
       ]);
 
       let pyData = ""
@@ -290,7 +295,13 @@ class App extends Component {
 
       subpy.stdout.on('end', () => {
         pyData = pyData.replace('", u "', '", "') // fix errors with automatic unicode parsing (eg: ["France", u "Saint-Martin-d"])
-        const parsed = JSON.parse(pyData); // string to object
+        let parsed
+
+        try {
+          parsed = JSON.parse(pyData); // string to object
+        } catch (err) {
+          reject(new Error("Received error from Google Analytics API -- be sure that your dates make sense and that your dimensions and metrics can be used in combination with each other."))
+        }
 
         resolve(parsed)
       })

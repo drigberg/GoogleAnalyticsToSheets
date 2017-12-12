@@ -15,6 +15,14 @@ body {
   right: 30px;
 }
 
+#dates {
+  margin: 20px 0;
+}
+
+#dates input {
+  margin: 0 5px;
+}
+
 h1 {
   text-align: center;
 }
