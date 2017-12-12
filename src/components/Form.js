@@ -1,8 +1,5 @@
 import React, { Component } from 'react';
 import Checkbox from './Checkbox';
-// import analytics from './helpers/analytics';
-// import helpers from './helpers/helpers';
-// import sheets from './helpers/sheets';
 
 class Form extends Component {
   constructor(props) {
@@ -33,6 +30,22 @@ class Form extends Component {
     this.props.parent.fetchAndSend(this.state)
   }
 
+  getDateRange() {
+    // temp catch
+    if (!document.getElementById("dateStart") || !document.getElementById("dateStart")) {
+      return null
+    }
+
+    let start = document.getElementById("dateStart").value
+    let end = document.getElementById("dateEnd").value
+
+    if (!start || !end || Date.parse(end) < Date.parse(start)) {
+      return null
+    }
+
+    return { start, end }
+  }
+
   get metrics() {
     return Array.from(document.getElementsByClassName("metric"))
       .filter(checkbox => checkbox.checked)
@@ -52,19 +65,44 @@ class Form extends Component {
           <h3>Metrics</h3>
 
           <Checkbox className="metric" name="sessions" clickHandler={this.handleInputChange} />
+          <Checkbox className="metric" name="users" clickHandler={this.handleInputChange} />
+          <Checkbox className="metric" name="bounceRate" clickHandler={this.handleInputChange} />
           <Checkbox className="metric" name="pageLoadTime" clickHandler={this.handleInputChange} />
           <Checkbox className="metric" name="timeOnPage" clickHandler={this.handleInputChange} />
+          <Checkbox className="metric" name="pageviewsPerSession" clickHandler={this.handleInputChange} />
+          <Checkbox className="metric" name="sessionDuration" clickHandler={this.handleInputChange} />
         </div>
 
         <div>
           <h3>Dimensions</h3>
-
           <Checkbox className="dimension" name="screenResolution" />
+          <Checkbox className="dimension" name="source" />
+          <Checkbox className="dimension" name="referralPath" />
+          <Checkbox className="dimension" name="keyword" />
           <Checkbox className="dimension" name="city" />
           <Checkbox className="dimension" name="country" />
           <Checkbox className="dimension" name="browser" />
           <Checkbox className="dimension" name="operatingSystem" />
           <Checkbox className="dimension" name="userType" />
+        </div>
+
+        <div id="dates">
+          <label>
+            Date Range Start
+          <input
+              type="date"
+              name="dateStart"
+              id="dateStart"
+            />
+          </label>
+          <label>
+            Date Range End
+          <input
+              type="date"
+              name="dateEnd"
+              id="dateEnd"
+            />
+          </label>
         </div>
 
         <button disabled={!this.state.oauth2Client || !this.state.oauth2Client.credentials} type="button" onClick={this.fetchAndSend}>Fetch and Send</button>

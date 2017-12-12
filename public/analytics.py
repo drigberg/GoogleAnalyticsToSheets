@@ -35,6 +35,8 @@ def get_report(analytics):
 
     metricsInput = sys.argv[2].split("-")
     dimensionsInput = sys.argv[3].split("-")
+    dateStart = sys.argv[4]
+    dateEnd = sys.argv[5]
 
     metrics = []
     dimensions = []
@@ -52,7 +54,7 @@ def get_report(analytics):
             'reportRequests': [
             {
                 'viewId': VIEW_ID,
-                'dateRanges': [{'startDate': '7daysAgo', 'endDate': 'today'}],
+                'dateRanges': [{'startDate': dateStart, 'endDate': dateEnd}],
                 'metrics': metrics,
                 'dimensions': dimensions
             }]

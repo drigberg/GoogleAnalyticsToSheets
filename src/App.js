@@ -64,19 +64,27 @@ class App extends Component {
     this.writeToConsole("\n------\n");
     this.fetchEnv()
       .then(() => {
-        return this.getAnalyticsData()
-      })
-      .then((data) => {
-        if (!data) {
-          this.writeToConsole("Error: no data received")
+        const dateRange = this.form.getDateRange()
+
+        if (!dateRange) {
+          this.writeToConsole("Please be sure that date range is provided, and that start is before end.")
+
+          return null
         }
 
-        const parsedData = this.parseAnalyticsResponse(data)
+        return this.getAnalyticsData(dateRange)
+          .then((data) => {
+            if (!data) {
+              this.writeToConsole("Error: no data received")
+            }
 
-        this.writeToConsole("Got analytics data!\nReading sheets client file...")
-        const writer = this.writeToSheet(parsedData)
+            const parsedData = this.parseAnalyticsResponse(data, dateRange)
 
-        return writer(this.form.state.oauth2Client);
+            this.writeToConsole("Got analytics data!\nReading sheets client file...")
+            const writer = this.writeToSheet(parsedData)
+
+            return writer(this.form.state.oauth2Client);
+          })
       })
       .catch((err) => {
         this.writeToConsole(`Error: ${err.message}`)
@@ -196,23 +204,32 @@ class App extends Component {
     }
   }
 
-  parseAnalyticsResponse(data) {
+  parseAnalyticsResponse(data, dateRange) {
     const ret = { rows: [] }
 
     data.reports.forEach((report) => {
-      let dimensionHeaders = (report.columnHeader && report.columnHeader.dimensions) || []
-      // let metricHeaders = (report.metricHeader && report.metricHeader.metricHeaderEntries) || []
-      let headers = ["Date Range", ...dimensionHeaders, "Sessions"]
+      const header = report.columnHeader
+      const dimensionHeaders = (header && header.dimensions) || []
+      const metricHeaders = ((header && header.metricHeader && header.metricHeader.metricHeaderEntries) || [])
+        .map(item => item.name)
+
+      const headers = [
+        "Date Range Start",
+        "Date Range End",
+        ...metricHeaders,
+        ...dimensionHeaders
+      ]
+        .map(header => header.replace('ga:', ''))
 
       Object.assign(ret, { headers })
 
       report.data.rows.forEach((row) => {
-        let dimensions = row.dimensions || []
-        let dateRangeValues = row.metrics || []
+        const dimensions = row.dimensions || []
+        const metrics = row.metrics || []
 
-        for (let i = 0; i < dateRangeValues.length; i++) {
-          let values = dateRangeValues[i]
-          ret.rows.push([i, ...dimensions, values.values[0]])
+        for (let i = 0; i < metrics.length; i++) {
+          let metric = metrics[i]
+          ret.rows.push([dateRange.start, dateRange.end, ...metric.values, ...dimensions])
         }
       })
     })
@@ -247,11 +264,14 @@ class App extends Component {
         promise
           .then(() => {
             let keyString = Buffer.isBuffer(data) ? JSON.parse(data) : data
-            const parsed = JSON.parse(keyString)
-            const parsedTwice = JSON.parse(parsed)
+            let parsed = JSON.parse(keyString)
 
-            this.ids.view = parsedTwice.viewId
-            this.ids.spreadsheet = parsedTwice.spreadsheetId
+            if (typeof parsed !== "object") {
+              parsed = JSON.parse(parsed)
+            }
+
+            this.ids.view = parsed.viewId
+            this.ids.spreadsheet = parsed.spreadsheetId
 
             resolve()
           })
@@ -259,9 +279,10 @@ class App extends Component {
     })
   }
 
-  getAnalyticsData() {
+  getAnalyticsData(dateRange) {
     return new Promise((resolve, reject) => {
       this.writeToConsole(`Getting analytics data with view id ${this.ids.view}`)
+
       const metrics = this.form.metrics.join("-") || "sessions"
       const dimensions = this.form.dimensions.join("-") || "city-country"
 
@@ -270,7 +291,9 @@ class App extends Component {
         path.join(window.__dirname, "../../../../../../../../public/analytics.py"),
         this.ids.view,
         metrics,
-        dimensions
+        dimensions,
+        dateRange.start,
+        dateRange.end
       ]);
 
       let pyData = ""
@@ -281,7 +304,15 @@ class App extends Component {
 
       subpy.stdout.on('end', () => {
         pyData = pyData.replace('", u "', '", "') // fix errors with automatic unicode parsing (eg: ["France", u "Saint-Martin-d"])
-        const parsed = JSON.parse(pyData); // string to object
+        let parsed
+
+        try {
+          parsed = JSON.parse(pyData); // string to object
+        } catch (err) {
+          reject(new Error("Received error from Google Analytics API -- be sure that your dates make sense and that your dimensions and metrics can be used in combination with each other."))
+        }
+
+        console.log(parsed)
 
         resolve(parsed)
       })
