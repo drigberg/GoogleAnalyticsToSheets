@@ -18,20 +18,13 @@ const GoogleAuth = window.require('google-auth-library');
 const Store = window.require('electron-store');
 const store = new Store();
 
-
 /**
  * Constants
  */
 
 // If modifying these scopes, delete your previously saved credentials
 // at ~/.credentials/sheets.googleapis.com-nodejs-quickstart.json
-const ENV_PATH = './.env.json';
 const SCOPES = ['https://www.googleapis.com/auth/spreadsheets'];
-const TOKEN_DIR = `${window.process.env.HOME
-  || window.process.env.HOMEPATH
-  || window.process.env.USERPROFILE}/.credentials/`;
-const TOKEN_PATH = `${TOKEN_DIR}sheets.googleapis.com-nodejs-quickstart.json`;
-const CLIENT_SECRET_PATH = path.join(window.__dirname, '../sheets_key.json');
 
 const style = {
   padding: '10px'
@@ -44,30 +37,30 @@ const style = {
 class App extends Component {
   constructor() {
     super();
-    this.ids = {};
     this.state = {};
 
     this.fetchAndSend = this.fetchAndSend.bind(this);
     this.fetchEnv = this.fetchEnv.bind(this);
     this.writeToConsole = this.writeToConsole.bind(this);
-    this.storeData = this.storeData.bind(this);
     this.getAnalyticsData = this.getAnalyticsData.bind(this);
     this.parseAnalyticsResponse = this.parseAnalyticsResponse.bind(this);
     this.writeToSheet = this.writeToSheet.bind(this);
     this.queryForNewToken = this.queryForNewToken.bind(this);
     this.createClient = this.createClient.bind(this);
     this.readToken = this.readToken.bind(this);
-    this.storeToken = this.storeToken.bind(this);
     this.handleTokenInput = this.handleTokenInput.bind(this);
+    this.saveSheetsKey = this.saveSheetsKey.bind(this);
+    this.saveAnalyticsKey = this.saveAnalyticsKey.bind(this);
+    this.getAnalyticsKeyPath = this.getAnalyticsKeyPath.bind(this);
+  }
 
-    store.set('hello', 'world');
-
-    this.createClient()
-    .then(() => this.readToken());
+  componentDidMount() {
+    this.getAnalyticsKeyPath();
+    this.createClient();
+    this.readToken();
   }
 
   fetchAndSend() {
-    const hello = store.get('hello');
     this.writeToConsole('\n------\n');
     this.fetchEnv()
       .then(() => {
@@ -90,7 +83,14 @@ class App extends Component {
             this.writeToConsole('Got analytics data!\nReading sheets client file...');
             const writer = this.writeToSheet(parsedData);
 
-            return writer(this.form.state.oauth2Client);
+            const oauth2Client = Object.assign(
+              this.form.state.oauth2Client,
+              { credentials: this.form.state.oauthToken }
+            );
+
+            console.log(oauth2Client)
+
+            return writer(oauth2Client);
           });
       })
       .catch((err) => {
@@ -99,56 +99,81 @@ class App extends Component {
       });
   }
 
+  saveSheetsKey() {
+    const el = document.getElementById('sheetsKeyLoad');
+    const filepath = el.files[0].path;
 
-  createClient() {
-    return new Promise((resolve, reject) => {
-      fs.readFile(CLIENT_SECRET_PATH, (err, content) => {
-        if (err) {
-          this.writeToConsole(`Error loading client secret file: ${err.message}`);
-          reject(err);
-        }
+    fs.readFile(filepath, (err, content) => {
+      if (err) {
+        this.writeToConsole(`Error loading client secret file: ${err.message}`);
+      }
 
-        const parsedSecret = JSON.parse(content);
+      const sheetsKey = JSON.parse(content);
 
-        // Authorize a client with the loaded credentials, then call the
-        // Google Sheets API.
-        const clientId = parsedSecret.installed.client_id;
-        const clientSecret = parsedSecret.installed.client_secret;
-        const redirectUrl = parsedSecret.installed.redirect_uris[0];
-
-        const auth = new GoogleAuth();
-        const oauth2Client = new auth.OAuth2(clientId, clientSecret, redirectUrl);
-
-        const newFormState = Object.assign({}, this.form.state, { oauth2Client });
-        this.form.setState(newFormState);
-        resolve();
-      });
+      store.set('sheetsKey', sheetsKey);
+      this.createClient(sheetsKey);
     });
   }
 
+  getAnalyticsKeyPath() {
+    const filepath = store.get('analyticsKeyPath');
+    if (!filepath) {
+      this.writeToConsole('Failed to load analytics secret file');
+      return;
+    }
 
-  storeToken(token) {
-    return this.storeData(token, TOKEN_PATH, TOKEN_DIR);
+    const newFormState = Object.assign(this.form.state, { analyticsKeyPath: filepath });
+    this.form.setState(newFormState);
+  }
+
+  saveAnalyticsKey() {
+    const el = document.getElementById('analyticsKeyLoad');
+    const filepath = el.files[0].path;
+
+    const newFormState = Object.assign(this.form.state, { analyticsKeyPath: filepath });
+    this.form.setState(newFormState);
+
+    store.set('analyticsKeyPath', filepath);
+  }
+
+
+  createClient(sheetsKey) {
+    sheetsKey = sheetsKey || store.get('sheetsKey');
+
+    if (!sheetsKey) {
+      this.writeToConsole('Error loading sheets key');
+      return;
+    }
+
+    this.writeToConsole('Successfully loaded sheets key!');
+
+    // Authorize a client with the loaded credentials, then call the
+    // Google Sheets API.
+    const clientId = sheetsKey.installed.client_id;
+    const clientSecret = sheetsKey.installed.client_secret;
+    const redirectUrl = sheetsKey.installed.redirect_uris[0];
+
+    const auth = new GoogleAuth();
+    const oauth2Client = new auth.OAuth2(clientId, clientSecret, redirectUrl);
+
+    const newFormState = Object.assign({}, this.form.state, { oauth2Client });
+    return this.form.setState(newFormState);
   }
 
   /**
    * Get credentials
    */
   readToken() {
-    fs.readFile(TOKEN_PATH, (err, token) => {
-      if (err || !token) {
-        this.queryForNewToken();
-        return;
-      }
+    const token = store.get('authToken');
 
-      const parsedToken = JSON.parse(token);
+    if (!token) {
+      this.queryForNewToken();
+      return;
+    }
 
-      const newClient = this.form.state.oauth2Client;
-      newClient.credentials = parsedToken;
-      const newFormState = Object.assign({}, this.form.state, { oauth2Client: newClient });
+    const newFormState = Object.assign({}, this.form.state, { oauthToken: token });
 
-      this.form.setState(newFormState);
-    });
+    this.form.setState(newFormState);
   }
 
   /**
@@ -182,12 +207,13 @@ class App extends Component {
 
       this.form.setState(newState);
 
-      return this.storeToken(token);
+      return store.set('authToken', token);
     });
   }
 
   writeToSheet(data) {
     return (authClient) => {
+      console.log(authClient)
       this.writeToConsole('\nSending data to Sheets API...');
       const body = {
         values: [data.headers, ...data.rows]
@@ -197,7 +223,7 @@ class App extends Component {
 
       sheets.spreadsheets.values.append({
         auth: authClient,
-        spreadsheetId: this.ids.spreadsheet,
+        spreadsheetId: this.form.state.ids.spreadsheet,
         range: 'AllData!A1:Z',
         valueInputOption: 'RAW',
         resource: body
@@ -245,50 +271,57 @@ class App extends Component {
   }
 
   fetchEnv() {
-    this.writeToConsole('Checking for spreadsheet id...');
+    this.writeToConsole('Checking for spreadsheet and view ids...');
 
-    return new Promise((resolve) => {
-      fs.readFile(ENV_PATH, (err, data) => {
-        let promise = Promise.resolve();
+    let env = store.get('env');
+    let promise = Promise.resolve();
 
-        if (err || !data) {
-          const questions = [
-            'What is the id of your Google Sheet?',
-            'What is your view id?'
-          ];
+    if (!env) {
+      const questions = [
+        'What is the id of your Google Sheet?',
+        'What is your view id?'
+      ];
 
-          promise = this.console.multipleDialogs(questions)
-            .then((res) => {
-              data = {
-                spreadsheetId: res[0],
-                viewId: res[1]
-              };
+      promise = this.console.multipleDialogs(questions)
+        .then((res) => {
+          if (!res[0] || !res[1]) {
+            this.writeToConsole('No info saved.');
 
-              return this.storeData(JSON.stringify(data), ENV_PATH);
-            });
-        }
+            return;
+          }
 
-        return promise
-          .then(() => {
-            const keyString = Buffer.isBuffer(data) ? JSON.parse(data) : data;
-            let parsed = JSON.parse(keyString);
+          env = {
+            spreadsheetId: res[0],
+            viewId: res[1]
+          };
 
-            if (typeof parsed !== 'object') {
-              parsed = JSON.parse(parsed);
-            }
+          this.writeToConsole('Saving ids!');
 
-            this.ids.view = parsed.viewId;
-            this.ids.spreadsheet = parsed.spreadsheetId;
+          store.set('env', env);
+          return env;
+        });
+    }
 
-            return resolve();
-          });
+    return promise
+      .then((data) => {
+        env = env || data;
+
+        const newState = Object.assign({}, this.state, {
+          ids: {
+            spreadsheet: env.spreadsheetId,
+            view: env.viewId
+          }
+        });
+
+        this.writeToConsole('Got ids!');
+
+        return this.form.setState(newState);
       });
-    });
   }
 
   getAnalyticsData(dateRange) {
     return new Promise((resolve, reject) => {
-      this.writeToConsole(`Getting analytics data with view id ${this.ids.view}`);
+      this.writeToConsole(`Getting analytics data with view id ${this.form.state.ids.view}`);
 
       const metrics = this.form.metrics.join('-') || 'sessions';
       const dimensions = this.form.dimensions.join('-') || 'city-country';
@@ -296,7 +329,8 @@ class App extends Component {
       const subpy = window.require('child_process').spawn('python', [
         // dear god please this needs to be cleaned somehow
         path.join(window.__dirname, '../public/analytics.py'),
-        this.ids.view,
+        this.form.state.ids.view,
+        this.form.state.analyticsKeyPath,
         metrics,
         dimensions,
         dateRange.start,
@@ -319,44 +353,11 @@ class App extends Component {
           reject(new Error('Received error from Google Analytics API -- be sure that your dates make sense and that your dimensions and metrics can be used in combination with each other.'));
         }
 
-        console.log(parsed);
-
         resolve(parsed);
       });
 
       subpy.stdout.on('error', (err) => {
         reject(err);
-      });
-    });
-  }
-
-  /**
-   * Store data to disk be used in later program executions.
-   *
-   * @param {Object} data The data to store to disk.
-   */
-  storeData(data, $path, dir) {
-    return new Promise((resolve, reject) => {
-      if (dir) {
-        try {
-          fs.mkdirSync(dir);
-        } catch (err) {
-          if (err.code !== 'EEXIST') {
-            throw err;
-          }
-        }
-      }
-
-
-      const writeable = JSON.stringify(data);
-
-      fs.writeFile($path, writeable, (err) => {
-        if (err) {
-          this.writeToConsole('Error saving data:', data);
-          reject(err);
-        }
-        this.writeToConsole(`Data stored to ${$path}`);
-        resolve();
       });
     });
   }

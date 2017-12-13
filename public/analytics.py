@@ -7,7 +7,7 @@ import os
 import json
 
 SCOPES = ['https://www.googleapis.com/auth/analytics.readonly']
-KEY_FILE_LOCATION = os.path.dirname(os.path.abspath(__file__)) + '/../analytics_key.json'
+KEY_FILE_LOCATION = sys.argv[2]
 VIEW_ID = sys.argv[1]
 
 def initialize_analyticsreporting():
@@ -33,10 +33,10 @@ def get_report(analytics):
         The Analytics Reporting API V4 response.
     """
 
-    metricsInput = sys.argv[2].split("-")
-    dimensionsInput = sys.argv[3].split("-")
-    dateStart = sys.argv[4]
-    dateEnd = sys.argv[5]
+    metricsInput = sys.argv[3].split("-")
+    dimensionsInput = sys.argv[4].split("-")
+    dateStart = sys.argv[5]
+    dateEnd = sys.argv[6]
 
     metrics = []
     dimensions = []

@@ -1,20 +1,24 @@
 import React, { Component } from 'react';
 import Checkbox from './Checkbox';
 
+const styles = {
+  dates: {
+    margin: '10px 0px'
+  }
+};
+
 class Form extends Component {
   constructor(props) {
     super(props);
     this.state = {
       metric: {},
-      dimension: {},
-      oauth2Client: {}
+      dimension: {}
     };
 
     this.props.parent.form = this;
 
     this.handleInputChange = this.handleInputChange.bind(this);
     this.fetchAndSend = this.fetchAndSend.bind(this);
-    this.saveSheetsKey = this.saveSheetsKey.bind(this);
   }
 
   handleInputChange(event) {
@@ -59,15 +63,13 @@ class Form extends Component {
       .map(checkbox => checkbox.id);
   }
 
-  saveSheetsKey() {
-    const el = document.getElementById('sheetsKeyLoad');
-    console.log(el.files[0].path);
-    // document.getElementsByTagName('input')[0].files[0].path
-    // console.log(value)
-  }
-
   render() {
-    const readyForSend = this.state.oauth2Client && this.state.oauth2Client.credentials;
+    const haveOAuth = this.state.oauthToken;
+    const haveSheetsKey = this.state.oauth2Client;
+    const haveAnalyticsKey = this.state.analyticsKeyPath;
+
+    const readyForSend = haveOAuth && haveSheetsKey && haveAnalyticsKey;
+
     return (
       <form style={{ display: this.props.display }} id="form">
         <div>
@@ -95,7 +97,7 @@ class Form extends Component {
           <Checkbox className="dimension" name="userType" />
         </div>
 
-        <div id="dates">
+        <div style={styles.dates} id="dates">
           <label htmlFor="dateStart">
             Date Range Start
             <input
@@ -117,25 +119,26 @@ class Form extends Component {
         <button disabled={!readyForSend} type="button" onClick={this.fetchAndSend}>Fetch and Send</button>
 
         <div id="secrets">
-          <button disabled={readyForSend} type="button" onClick={this.props.parent.getNewToken}>Get New Auth Token</button>
+          <button disabled={haveOAuth} type="button" onClick={this.props.parent.getNewToken}>Get New Auth Token</button>
           <label htmlFor="analyticsKeyLoad">
             Load New Analytics Key
             <input
-              disabled={readyForSend}
+              disabled={haveAnalyticsKey}
               type="file"
               name="analyticsKeyLoad"
               id="analyticsKeyLoad"
+              onChange={this.props.parent.saveAnalyticsKey}
             />
           </label>
 
           <label htmlFor="sheetsKeyLoad">
             Load New Sheets Key
             <input
-              disabled={readyForSend}
+              disabled={haveSheetsKey}
               type="file"
               name="sheetsKeyLoad"
               id="sheetsKeyLoad"
-              onChange={this.saveSheetsKey}
+              onChange={this.props.parent.saveSheetsKey}
             />
           </label>
         </div>

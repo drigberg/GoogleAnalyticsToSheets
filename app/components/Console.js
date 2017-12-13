@@ -3,7 +3,7 @@ import React, { Component } from 'react';
 const dialogs = window.require('dialogs')();
 const styles = {
   console: {
-    fontSize: '14px',
+    fontSize: '12px',
     backgroundColor: 'rgb(11, 25, 100)',
     color: 'rgb(236, 236, 236)',
     position: 'absolute',
