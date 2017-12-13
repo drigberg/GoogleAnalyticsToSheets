@@ -11,10 +11,11 @@
   },
   "rules": {
     "arrow-parens": ["off"],
+    "class-methods-use-this": "off",
     "compat/compat": "error",
     "consistent-return": "off",
     "comma-dangle": "off",
-    "flowtype-errors/show-errors": "error",
+    "flowtype-errors/show-errors": "off",
     "generator-star-spacing": "off",
     "import/no-unresolved": "error",
     "import/no-extraneous-dependencies": "off",
@@ -25,6 +26,7 @@
     "promise/always-return": "error",
     "promise/catch-or-return": "error",
     "promise/no-native": "off",
+    "react/prop-types": "off",
     "react/sort-comp": ["error", {
       "order": ["type-annotations", "static-methods", "lifecycle", "everything-else", "render"]
     }],

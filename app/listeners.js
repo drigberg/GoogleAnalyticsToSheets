@@ -1,4 +1,4 @@
 
-$("#fetch-and-send").click(() => {
-  fetchAndSend()
-})
+$('#fetch-and-send').click(() => {
+  fetchAndSend();
+});

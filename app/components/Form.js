@@ -14,51 +14,60 @@ class Form extends Component {
 
     this.handleInputChange = this.handleInputChange.bind(this);
     this.fetchAndSend = this.fetchAndSend.bind(this);
+    this.saveSheetsKey = this.saveSheetsKey.bind(this);
   }
 
   handleInputChange(event) {
     const target = event.target;
     const value = target.type === 'checkbox' ? target.checked : target.value;
 
-    const newState = Object.assign({}, this.state)
-    newState[target.className][target.name] = value
+    const newState = Object.assign({}, this.state);
+    newState[target.className][target.name] = value;
 
     this.setState(newState);
   }
 
   fetchAndSend() {
-    this.props.parent.fetchAndSend(this.state)
+    this.props.parent.fetchAndSend(this.state);
   }
 
   getDateRange() {
     // temp catch
-    if (!document.getElementById("dateStart") || !document.getElementById("dateStart")) {
-      return null
+    if (!document.getElementById('dateStart') || !document.getElementById('dateStart')) {
+      return null;
     }
 
-    let start = document.getElementById("dateStart").value
-    let end = document.getElementById("dateEnd").value
+    const start = document.getElementById('dateStart').value;
+    const end = document.getElementById('dateEnd').value;
 
     if (!start || !end || Date.parse(end) < Date.parse(start)) {
-      return null
+      return null;
     }
 
-    return { start, end }
+    return { start, end };
   }
 
   get metrics() {
-    return Array.from(document.getElementsByClassName("metric"))
+    return Array.from(document.getElementsByClassName('metric'))
       .filter(checkbox => checkbox.checked)
-      .map(checkbox => checkbox.id)
+      .map(checkbox => checkbox.id);
   }
 
   get dimensions() {
-    return Array.from(document.getElementsByClassName("dimension"))
+    return Array.from(document.getElementsByClassName('dimension'))
       .filter(checkbox => checkbox.checked)
-      .map(checkbox => checkbox.id)
+      .map(checkbox => checkbox.id);
+  }
+
+  saveSheetsKey() {
+    const el = document.getElementById('sheetsKeyLoad');
+    console.log(el.files[0].path);
+    // document.getElementsByTagName('input')[0].files[0].path
+    // console.log(value)
   }
 
   render() {
+    const readyForSend = this.state.oauth2Client && this.state.oauth2Client.credentials;
     return (
       <form style={{ display: this.props.display }} id="form">
         <div>
@@ -87,17 +96,17 @@ class Form extends Component {
         </div>
 
         <div id="dates">
-          <label>
+          <label htmlFor="dateStart">
             Date Range Start
-          <input
+            <input
               type="date"
               name="dateStart"
               id="dateStart"
             />
           </label>
-          <label>
+          <label htmlFor="dateEnd">
             Date Range End
-          <input
+            <input
               type="date"
               name="dateEnd"
               id="dateEnd"
@@ -105,11 +114,33 @@ class Form extends Component {
           </label>
         </div>
 
-        <button disabled={!this.state.oauth2Client || !this.state.oauth2Client.credentials} type="button" onClick={this.fetchAndSend}>Fetch and Send</button>
-        <button disabled={this.state.oauth2Client && this.state.oauth2Client.credentials} type="button" onClick={this.props.parent.getNewToken}>Get New Auth Token</button>
+        <button disabled={!readyForSend} type="button" onClick={this.fetchAndSend}>Fetch and Send</button>
 
-        <textarea disabled cols="80" rows="20" id="console"></textarea>
-        <input type="text" id="console-input"></input>
+        <div id="secrets">
+          <button disabled={readyForSend} type="button" onClick={this.props.parent.getNewToken}>Get New Auth Token</button>
+          <label htmlFor="analyticsKeyLoad">
+            Load Analytics Key
+            <input
+              disabled={readyForSend}
+              type="file"
+              name="analyticsKeyLoad"
+              id="analyticsKeyLoad"
+            />
+          </label>
+
+          <label htmlFor="sheetsKeyLoad">
+            Load Sheets Key
+            <input
+              disabled={!readyForSend}
+              type="file"
+              name="sheetsKeyLoad"
+              id="sheetsKeyLoad"
+              onChange={this.saveSheetsKey}
+            />
+          </label>
+        </div>
+        <textarea disabled cols="80" rows="20" id="console" />
+        <input type="text" id="console-input" />
       </form>
     );
   }
