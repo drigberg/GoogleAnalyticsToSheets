@@ -31,10 +31,11 @@ const TOKEN_DIR = `${window.process.env.HOME
   || window.process.env.HOMEPATH
   || window.process.env.USERPROFILE}/.credentials/`;
 const TOKEN_PATH = `${TOKEN_DIR}sheets.googleapis.com-nodejs-quickstart.json`;
-console.log(window.__dirname);
-console.log(path.join(window.__dirname, '../sheets_key.json'));
-
 const CLIENT_SECRET_PATH = path.join(window.__dirname, '../sheets_key.json');
+
+const style = {
+  padding: '10px'
+};
 
 /**
  * Module
@@ -61,13 +62,12 @@ class App extends Component {
 
     store.set('hello', 'world');
 
-    return this.createClient()
+    this.createClient()
     .then(() => this.readToken());
   }
 
   fetchAndSend() {
     const hello = store.get('hello');
-    console.log(hello);
     this.writeToConsole('\n------\n');
     this.fetchEnv()
       .then(() => {
@@ -370,7 +370,7 @@ class App extends Component {
 
   render() {
     return (
-      <div id="app">
+      <div id="app" style={style}>
         <ToggleReadme parent={this} />
         <h1>Google Analytics 2 Sheets</h1>
         <Form display={this.state.readmeActive ? 'none' : 'block'} parent={this} writeToConsole={this.writeToConsole} />

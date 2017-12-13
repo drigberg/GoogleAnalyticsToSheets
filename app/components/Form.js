@@ -119,7 +119,7 @@ class Form extends Component {
         <div id="secrets">
           <button disabled={readyForSend} type="button" onClick={this.props.parent.getNewToken}>Get New Auth Token</button>
           <label htmlFor="analyticsKeyLoad">
-            Load Analytics Key
+            Load New Analytics Key
             <input
               disabled={readyForSend}
               type="file"
@@ -129,9 +129,9 @@ class Form extends Component {
           </label>
 
           <label htmlFor="sheetsKeyLoad">
-            Load Sheets Key
+            Load New Sheets Key
             <input
-              disabled={!readyForSend}
+              disabled={readyForSend}
               type="file"
               name="sheetsKeyLoad"
               id="sheetsKeyLoad"
@@ -139,8 +139,6 @@ class Form extends Component {
             />
           </label>
         </div>
-        <textarea disabled cols="80" rows="20" id="console" />
-        <input type="text" id="console-input" />
       </form>
     );
   }

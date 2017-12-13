@@ -1,6 +1,31 @@
 import React, { Component } from 'react';
 
 const dialogs = window.require('dialogs')();
+const styles = {
+  console: {
+    fontSize: '14px',
+    backgroundColor: 'rgb(11, 25, 100)',
+    color: 'rgb(236, 236, 236)',
+    position: 'absolute',
+    left: '0px',
+    width: '100%',
+    border: 'none',
+    bottom: '0px',
+  },
+  input: {
+    display: 'none',
+    width: '100%',
+    fontSize: '14px',
+    height: '30px',
+    position: 'absolute',
+    bottom: '0px',
+    left: '0px',
+    zIndex: 2,
+    border: 'none',
+    backgroundColor: 'rgb(8, 18, 68)',
+    color: 'white'
+  }
+};
 
 class Console extends Component {
   constructor(props) {
@@ -18,7 +43,7 @@ class Console extends Component {
   }
 
   dialogAsPromise(question) {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       dialogs.prompt(question, (res) => {
         resolve(res);
       });
@@ -67,13 +92,13 @@ class Console extends Component {
   }
 
   render() {
-    const consoleBottom = this.state.inputVisible ? 30 : 0;
-    const inputDisplay = this.state.inputVisible ? 'block' : 'none';
+    styles.console.bottom = this.state.inputVisible ? 30 : 0;
+    styles.input.display = this.state.inputVisible ? 'block' : 'none';
 
     return (
       <div style={{ display: this.props.display }}>
-        <textarea style={{ bottom: consoleBottom }} disabled cols="80" rows="20" name="output" id="console" value={this.state.output} />
-        <input style={{ display: inputDisplay }} type="text" name="input" id="console-input" onKeyPress={this._handleKeyPress} />
+        <textarea style={styles.console} disabled cols="80" rows="20" name="output" id="console" value={this.state.output} />
+        <input style={styles.input} type="text" name="input" id="console-input" onKeyPress={this._handleKeyPress} />
       </div>
     );
   }
