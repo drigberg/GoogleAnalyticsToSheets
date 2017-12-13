@@ -14,7 +14,7 @@ import './main.css';
 const fs = window.require('fs');
 const path = window.require('path');
 const google = window.require('googleapis');
-const googleAuth = window.require('google-auth-library');
+const GoogleAuth = window.require('google-auth-library');
 const Store = window.require('electron-store');
 const store = new Store();
 
@@ -61,13 +61,11 @@ class App extends Component {
 
     store.set('hello', 'world');
 
-    this.createClient()
-    .then(() => {
-      this.readToken();
-    });
+    return this.createClient()
+    .then(() => this.readToken());
   }
 
-  fetchAndSend(text) {
+  fetchAndSend() {
     const hello = store.get('hello');
     console.log(hello);
     this.writeToConsole('\n------\n');
@@ -118,7 +116,7 @@ class App extends Component {
         const clientSecret = parsedSecret.installed.client_secret;
         const redirectUrl = parsedSecret.installed.redirect_uris[0];
 
-        const auth = new googleAuth();
+        const auth = new GoogleAuth();
         const oauth2Client = new auth.OAuth2(clientId, clientSecret, redirectUrl);
 
         const newFormState = Object.assign({}, this.form.state, { oauth2Client });
@@ -160,7 +158,7 @@ class App extends Component {
    * @param {getEventsCallback} callback The callback to call with the authorized
    *     client.
    */
-  queryForNewToken(callback) {
+  queryForNewToken() {
     const oauth2Client = this.form.state.oauth2Client;
     const authUrl = oauth2Client.generateAuthUrl({
       access_type: 'offline',
@@ -228,7 +226,7 @@ class App extends Component {
         ...metricHeaders,
         ...dimensionHeaders
       ]
-        .map(header => header.replace('ga:', ''));
+        .map($header => $header.replace('ga:', ''));
 
       Object.assign(ret, { headers });
 
@@ -249,7 +247,7 @@ class App extends Component {
   fetchEnv() {
     this.writeToConsole('Checking for spreadsheet id...');
 
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       fs.readFile(ENV_PATH, (err, data) => {
         let promise = Promise.resolve();
 
@@ -266,11 +264,11 @@ class App extends Component {
                 viewId: res[1]
               };
 
-              this.storeData(JSON.stringify(data), ENV_PATH);
+              return this.storeData(JSON.stringify(data), ENV_PATH);
             });
         }
 
-        promise
+        return promise
           .then(() => {
             const keyString = Buffer.isBuffer(data) ? JSON.parse(data) : data;
             let parsed = JSON.parse(keyString);
@@ -282,7 +280,7 @@ class App extends Component {
             this.ids.view = parsed.viewId;
             this.ids.spreadsheet = parsed.spreadsheetId;
 
-            resolve();
+            return resolve();
           });
       });
     });
@@ -337,7 +335,7 @@ class App extends Component {
    *
    * @param {Object} data The data to store to disk.
    */
-  storeData(data, path, dir) {
+  storeData(data, $path, dir) {
     return new Promise((resolve, reject) => {
       if (dir) {
         try {
@@ -352,12 +350,12 @@ class App extends Component {
 
       const writeable = JSON.stringify(data);
 
-      fs.writeFile(path, writeable, (err) => {
+      fs.writeFile($path, writeable, (err) => {
         if (err) {
           this.writeToConsole('Error saving data:', data);
           reject(err);
         }
-        this.writeToConsole(`Data stored to ${path}`);
+        this.writeToConsole(`Data stored to ${$path}`);
         resolve();
       });
     });
