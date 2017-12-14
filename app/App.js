@@ -22,8 +22,6 @@ const store = new Store();
  * Constants
  */
 
-// If modifying these scopes, delete your previously saved credentials
-// at ~/.credentials/sheets.googleapis.com-nodejs-quickstart.json
 const SCOPES = ['https://www.googleapis.com/auth/spreadsheets'];
 
 const style = {
@@ -110,6 +108,8 @@ class App extends Component {
 
       const sheetsKey = JSON.parse(content);
 
+      this.writeToConsole('Successfully loaded sheets key!');
+
       store.set('sheetsKey', sheetsKey);
       this.createClient(sheetsKey);
     });
@@ -133,6 +133,8 @@ class App extends Component {
     const newFormState = Object.assign(this.form.state, { analyticsKeyPath: filepath });
     this.form.setState(newFormState);
 
+    this.writeToConsole('Successfully loaded analytics key!');
+
     store.set('analyticsKeyPath', filepath);
   }
 
@@ -144,8 +146,6 @@ class App extends Component {
       this.writeToConsole('Error loading sheets key');
       return;
     }
-
-    this.writeToConsole('Successfully loaded sheets key!');
 
     // Authorize a client with the loaded credentials, then call the
     // Google Sheets API.
@@ -295,7 +295,7 @@ class App extends Component {
             viewId: res[1]
           };
 
-          this.writeToConsole('Saving ids!');
+          this.writeToConsole('Successfully saved ids!');
 
           store.set('env', env);
           return env;
@@ -313,8 +313,6 @@ class App extends Component {
           }
         });
 
-        this.writeToConsole('Got ids!');
-
         return this.form.setState(newState);
       });
   }
@@ -328,7 +326,7 @@ class App extends Component {
 
       const subpy = window.require('child_process').spawn('python', [
         // dear god please this needs to be cleaned somehow
-        path.join(window.__dirname, '../public/analytics.py'),
+        path.join(window.__dirname, './analytics.py'),
         this.form.state.ids.view,
         this.form.state.analyticsKeyPath,
         metrics,

@@ -31,8 +31,8 @@
   },
   "browserslist": "electron 1.6",
   "build": {
-    "productName": "ElectronReact",
-    "appId": "org.develar.ElectronReact",
+    "productName": "Analytics2Sheets",
+    "appId": "org.develar.Analytics2Sheets",
     "files": [
       "dist/",
       "node_modules/",

@@ -119,11 +119,10 @@ class Form extends Component {
         <button disabled={!readyForSend} type="button" onClick={this.fetchAndSend}>Fetch and Send</button>
 
         <div id="secrets">
-          <button disabled={haveOAuth} type="button" onClick={this.props.parent.getNewToken}>Get New Auth Token</button>
+          <button disabled={haveOAuth} type="button" onClick={this.props.parent.queryForNewToken}>Get New Auth Token</button>
           <label htmlFor="analyticsKeyLoad">
             Load New Analytics Key
             <input
-              disabled={haveAnalyticsKey}
               type="file"
               name="analyticsKeyLoad"
               id="analyticsKeyLoad"
@@ -134,7 +133,6 @@ class Form extends Component {
           <label htmlFor="sheetsKeyLoad">
             Load New Sheets Key
             <input
-              disabled={haveSheetsKey}
               type="file"
               name="sheetsKeyLoad"
               id="sheetsKeyLoad"
