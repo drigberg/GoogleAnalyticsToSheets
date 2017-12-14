@@ -119,7 +119,7 @@ class Form extends Component {
         <button disabled={!readyForSend} type="button" onClick={this.fetchAndSend}>Fetch and Send</button>
 
         <div id="secrets">
-          <button disabled={haveOAuth} type="button" onClick={this.props.parent.queryForNewToken}>Get New Auth Token</button>
+          <button type="button" onClick={this.props.parent.queryForNewToken}>Get New Auth Token</button>
           <label htmlFor="analyticsKeyLoad">
             Load New Analytics Key
             <input

@@ -86,7 +86,7 @@ class App extends Component {
               { credentials: this.form.state.oauthToken }
             );
 
-            console.log(oauth2Client)
+            console.log(oauth2Client);
 
             return writer(oauth2Client);
           });
@@ -164,7 +164,7 @@ class App extends Component {
    * Get credentials
    */
   readToken() {
-    const token = store.get('authToken');
+    const token = store.get('oauthToken');
 
     if (!token) {
       this.queryForNewToken();
@@ -185,13 +185,17 @@ class App extends Component {
    */
   queryForNewToken() {
     const oauth2Client = this.form.state.oauth2Client;
+    if (!oauth2Client) {
+      return;
+    }
     const authUrl = oauth2Client.generateAuthUrl({
       access_type: 'offline',
       scope: SCOPES
     });
 
     this.writeToConsole(`Authorize this app by visiting this url: ${authUrl} \nEnter that code here in the input bar below and then hit enter.`);
-    this.console.showInput('handleTokenInput');
+
+    setTimeout(() => this.console.showInput('handleTokenInput'), 200);
   }
 
   handleTokenInput(input) {
@@ -201,19 +205,16 @@ class App extends Component {
         return;
       }
 
-      const newClient = this.form.state.oauth2Client;
-      newClient.credentials = token;
-      const newState = Object.assign({}, this.state, { oauth2Client: newClient });
+      const newState = Object.assign({}, this.state, { oauthToken: token });
 
-      this.form.setState(newState);
+      store.set('oauthToken', token);
 
-      return store.set('authToken', token);
+      setTimeout(() => this.form.setState(newState), 200);
     });
   }
 
   writeToSheet(data) {
     return (authClient) => {
-      console.log(authClient)
       this.writeToConsole('\nSending data to Sheets API...');
       const body = {
         values: [data.headers, ...data.rows]
