@@ -19,3 +19,13 @@ export const removeCheckbox = (className, id) => ({
   className,
   id
 });
+
+export const saveOAuthToken = (token) => ({
+  type: 'saveOAuthToken',
+  token
+});
+
+export const saveIds = (ids) => ({
+  type: 'saveIds',
+  ids
+});

@@ -65,7 +65,8 @@ class Form extends Component {
 
   render() {
     const { clients } = this.props;
-    const haveOAuth = this.state.oauthToken;
+
+    const haveOAuth = clients && clients.oauthToken;
     const haveSheetsKey = clients && clients.sheets;
     const haveAnalyticsKey = clients && clients.analytics;
 

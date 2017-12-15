@@ -8,7 +8,7 @@ import Form from './components/Form';
 import Console from './components/Console';
 import Readme from './components/Readme';
 import ToggleReadme from './components/ToggleReadme';
-import { saveAnalyticsClient, saveSheetsClient } from './actions';
+import { saveAnalyticsClient, saveIds, saveSheetsClient, saveOAuthToken } from './actions';
 
 // import logo from './logo.svg';
 import './main.css';
@@ -84,7 +84,7 @@ class App extends Component {
 
             const sheetsClient = Object.assign(
               this.props.clients.sheets,
-              { credentials: this.form.state.oauthToken }
+              { credentials: this.props.clients.oauthToken }
             );
 
             return writer(sheetsClient);
@@ -190,9 +190,7 @@ class App extends Component {
       return;
     }
 
-    const newFormState = Object.assign({}, this.form.state, { oauthToken: token });
-
-    this.form.setState(newFormState);
+    this.props.dispatch(saveOAuthToken(token));
   }
 
   /**
@@ -226,11 +224,7 @@ class App extends Component {
         return;
       }
 
-      const newState = Object.assign({}, this.state, { oauthToken: token });
-
-      store.set('oauthToken', token);
-
-      setTimeout(() => this.form.setState(newState), 200);
+      this.props.dispatch(saveOAuthToken(token));
     });
   }
 
@@ -245,7 +239,7 @@ class App extends Component {
 
       sheets.spreadsheets.values.append({
         auth: authClient,
-        spreadsheetId: this.form.state.ids.spreadsheet,
+        spreadsheetId: this.props.ids.spreadsheet,
         range: 'AllData!A1:Z',
         valueInputOption: 'RAW',
         resource: body
@@ -305,26 +299,21 @@ class App extends Component {
       .then((data) => {
         env = env || data;
 
-        const newState = Object.assign({}, this.state, {
-          ids: {
-            spreadsheet: env.spreadsheetId,
-            view: env.viewId
-          }
-        });
-
-        return this.form.setState(newState);
+        return this.props.dispatch(saveIds({
+          spreadsheet: env.spreadsheetId,
+          view: env.viewId
+        }));
       });
   }
 
   getAnalyticsData(dateRange) {
     const { clients } = this.props;
 
-    this.writeToConsole(`Getting analytics data with view id ${this.form.state.ids.view}`);
+    this.writeToConsole(`Getting analytics data with view id ${this.props.ids.view}`);
 
     const { form } = this.props;
 
     let metrics = form.metrics.map(metric => `ga:${metric}`).join(',');
-    console.log(form)
     let dimensions = form.dimensions.map(metric => `ga:${metric}`).join(',');
 
     if (!metrics) {
@@ -340,7 +329,7 @@ class App extends Component {
     return new Promise((resolve, reject) => {
       analytics.data.ga.get({
         auth: clients.analytics,
-        ids: `ga:${this.form.state.ids.view}`,
+        ids: `ga:${this.props.ids.view}`,
         metrics,
         dimensions,
         'start-date': dateRange.start,
@@ -379,9 +368,9 @@ class App extends Component {
 }
 
 const mapStateToProps = state => {
-  const { clients, console, form } = state;
+  const { clients, console, form, ids } = state;
 
-  return { clients, console, form };
+  return { clients, console, form, ids };
 };
 
 const ConnectedApp = connect(mapStateToProps)(App);
