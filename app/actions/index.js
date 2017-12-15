@@ -29,3 +29,9 @@ export const saveIds = (ids) => ({
   type: 'saveIds',
   ids
 });
+
+export const logger = (text) => ({
+  type: 'logger',
+  text
+});
+

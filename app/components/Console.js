@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import { connect } from 'react-redux';
 
 const dialogs = window.require('dialogs')();
 const styles = {
@@ -97,12 +98,20 @@ class Console extends Component {
 
     return (
       <div style={{ display: this.props.display }}>
-        <textarea style={styles.console} disabled cols="80" rows="20" name="output" id="console" value={this.state.output} />
+        <textarea style={styles.console} disabled cols="80" rows="20" name="output" id="console" value={this.props.logger} />
         <input style={styles.input} type="text" name="input" id="console-input" onKeyPress={this._handleKeyPress} />
       </div>
     );
   }
 }
 
-export default Console;
+const mapStateToProps = state => {
+  const { logger } = state;
+
+  return { logger };
+};
+
+const ConnectedConsole = connect(mapStateToProps)(Console);
+
+export default ConnectedConsole;
 

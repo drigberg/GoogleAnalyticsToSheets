@@ -8,7 +8,7 @@ import Form from './components/Form';
 import Console from './components/Console';
 import Readme from './components/Readme';
 import ToggleReadme from './components/ToggleReadme';
-import { saveAnalyticsClient, saveIds, saveSheetsClient, saveOAuthToken } from './actions';
+import { logger, saveAnalyticsClient, saveIds, saveSheetsClient, saveOAuthToken } from './actions';
 
 // import logo from './logo.svg';
 import './main.css';
@@ -40,7 +40,6 @@ class App extends Component {
 
     this.fetchAndSend = this.fetchAndSend.bind(this);
     this.fetchEnv = this.fetchEnv.bind(this);
-    this.writeToConsole = this.writeToConsole.bind(this);
     this.getAnalyticsData = this.getAnalyticsData.bind(this);
     this.parseAnalyticsResponse = this.parseAnalyticsResponse.bind(this);
     this.writeToSheet = this.writeToSheet.bind(this);
@@ -60,13 +59,13 @@ class App extends Component {
   }
 
   fetchAndSend() {
-    this.writeToConsole('\n------\n');
+    this.props.dispatch(logger('\n------\n'));
     this.fetchEnv()
       .then(() => {
         const dateRange = this.form.getDateRange();
 
         if (!dateRange) {
-          this.writeToConsole('Please be sure that date range is provided, and that start is before end.');
+          this.props.dispatch(logger('Please be sure that date range is provided, and that start is before end.'));
 
           return null;
         }
@@ -74,12 +73,12 @@ class App extends Component {
         return this.getAnalyticsData(dateRange)
           .then((data) => {
             if (!data) {
-              this.writeToConsole('Error: no data received');
+              this.props.dispatch(logger('Error: no data received'));
             }
 
             const parsedData = this.parseAnalyticsResponse(data, dateRange);
 
-            this.writeToConsole('Got analytics data!\nReading sheets client file...');
+            this.props.dispatch(logger('Got analytics data!\nReading sheets client file...'));
             const writer = this.writeToSheet(parsedData);
 
             const sheetsClient = Object.assign(
@@ -91,7 +90,7 @@ class App extends Component {
           });
       })
       .catch((err) => {
-        this.writeToConsole(`Error: ${err.message}`);
+        this.props.dispatch(logger(`Error: ${err.message}`));
         console.log(err);
       });
   }
@@ -102,12 +101,12 @@ class App extends Component {
 
     fs.readFile(filepath, (err, content) => {
       if (err) {
-        this.writeToConsole(`Error loading sheets key: ${err.message}`);
+        this.props.dispatch(logger(`Error loading sheets key: ${err.message}`));
       }
 
       const key = JSON.parse(content);
 
-      this.writeToConsole('Successfully loaded sheets key!');
+      this.props.dispatch(logger('Successfully loaded sheets key!'));
 
       store.set('sheetsKey', key);
       this.createSheetsClient(key);
@@ -120,12 +119,12 @@ class App extends Component {
 
     fs.readFile(filepath, (err, content) => {
       if (err) {
-        this.writeToConsole(`Error loading analytics key: ${err.message}`);
+        this.props.dispatch(logger(`Error loading analytics key: ${err.message}`));
       }
 
       const key = JSON.parse(content);
 
-      this.writeToConsole('Successfully loaded analytics key!');
+      this.props.dispatch(logger('Successfully loaded analytics key!'));
 
       store.set('analyticsKey', key);
       this.createAnalyticsClient(key);
@@ -136,7 +135,7 @@ class App extends Component {
     key = key || store.get('analyticsKey');
 
     if (!key) {
-      this.writeToConsole('Error loading analytics key');
+      this.props.dispatch(logger('Error loading analytics key'));
       return;
     }
 
@@ -163,7 +162,7 @@ class App extends Component {
     sheetsKey = sheetsKey || store.get('sheetsKey');
 
     if (!sheetsKey) {
-      this.writeToConsole('Error loading sheets key');
+      this.props.dispatch(logger('Error loading sheets key'));
       return;
     }
 
@@ -210,7 +209,7 @@ class App extends Component {
       scope: SCOPES
     });
 
-    this.writeToConsole(`Authorize this app by visiting this url: ${authUrl} \nEnter that code here in the input bar below and then hit enter.`);
+    this.props.dispatch(logger(`Authorize this app by visiting this url: ${authUrl} \nEnter that code here in the input bar below and then hit enter.`));
 
     setTimeout(() => this.console.showInput('handleTokenInput'), 200);
   }
@@ -220,7 +219,7 @@ class App extends Component {
 
     clients.sheets.getToken(input, (err, token) => {
       if (err) {
-        this.writeToConsole('Error while trying to retrieve access token', err);
+        this.props.dispatch(logger('Error while trying to retrieve access token', err));
         return;
       }
 
@@ -230,7 +229,7 @@ class App extends Component {
 
   writeToSheet(data) {
     return (authClient) => {
-      this.writeToConsole('\nSending data to Sheets API...');
+      this.props.dispatch(logger('\nSending data to Sheets API...'));
       const body = {
         values: [data.headers, ...data.rows]
       };
@@ -245,9 +244,9 @@ class App extends Component {
         resource: body
       }, (err, res) => {
         if (err) {
-          this.writeToConsole(`Write error: ${err.message}`);
+          this.props.dispatch(logger(`Write error: ${err.message}`));
         } else {
-          this.writeToConsole(`${res.updates.updatedCells} cells updated in range ${res.updates.updatedRange}.\n`);
+          this.props.dispatch(logger(`${res.updates.updatedCells} cells updated in range ${res.updates.updatedRange}.\n`));
         }
       });
     };
@@ -264,7 +263,7 @@ class App extends Component {
   }
 
   fetchEnv() {
-    this.writeToConsole('Checking for spreadsheet and view ids...');
+    this.props.dispatch(logger('Checking for spreadsheet and view ids...'));
 
     let env = store.get('env');
     let promise = Promise.resolve();
@@ -278,7 +277,7 @@ class App extends Component {
       promise = this.console.multipleDialogs(questions)
         .then((res) => {
           if (!res[0] || !res[1]) {
-            this.writeToConsole('No info saved.');
+            this.props.dispatch(logger('No info saved.'));
 
             return;
           }
@@ -288,7 +287,7 @@ class App extends Component {
             viewId: res[1]
           };
 
-          this.writeToConsole('Successfully saved ids!');
+          this.props.dispatch(logger('Successfully saved ids!'));
 
           store.set('env', env);
           return env;
@@ -309,7 +308,7 @@ class App extends Component {
   getAnalyticsData(dateRange) {
     const { clients } = this.props;
 
-    this.writeToConsole(`Getting analytics data with view id ${this.props.ids.view}`);
+    this.props.dispatch(logger(`Getting analytics data with view id ${this.props.ids.view}`));
 
     const { form } = this.props;
 
@@ -345,13 +344,6 @@ class App extends Component {
     });
   }
 
-  writeToConsole(text) {
-    const newConsoleState = Object.assign({}, this.console.state);
-    newConsoleState.output += `\n${text}`;
-
-    this.console.setState(newConsoleState);
-  }
-
   render() {
     const { readmeActive } = this.props;
 
@@ -359,8 +351,8 @@ class App extends Component {
       <div id="app" style={style}>
         <ToggleReadme parent={this} />
         <h1>Google Analytics 2 Sheets</h1>
-        <Form display={readmeActive ? 'none' : 'block'} parent={this} writeToConsole={this.writeToConsole} />
-        <Console display={readmeActive ? 'none' : 'block'} parent={this} writeToConsole={this.writeToConsole} />
+        <Form display={readmeActive ? 'none' : 'block'} parent={this} />
+        <Console display={readmeActive ? 'none' : 'block'} parent={this} />
         <Readme display={readmeActive ? 'block' : 'none'} />
       </div>
     );
