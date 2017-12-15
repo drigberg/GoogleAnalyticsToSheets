@@ -12,7 +12,6 @@ import ToggleReadme from './components/ToggleReadme';
 import './main.css';
 
 const fs = window.require('fs');
-const path = window.require('path');
 const google = window.require('googleapis');
 const GoogleAuth = window.require('google-auth-library');
 const Store = window.require('electron-store');
@@ -43,19 +42,15 @@ class App extends Component {
     this.getAnalyticsData = this.getAnalyticsData.bind(this);
     this.parseAnalyticsResponse = this.parseAnalyticsResponse.bind(this);
     this.writeToSheet = this.writeToSheet.bind(this);
-    this.queryForNewToken = this.queryForNewToken.bind(this);
-    this.createClient = this.createClient.bind(this);
-    this.readToken = this.readToken.bind(this);
-    this.handleTokenInput = this.handleTokenInput.bind(this);
+    this.createSheetsClient = this.createSheetsClient.bind(this);
     this.saveSheetsKey = this.saveSheetsKey.bind(this);
     this.saveAnalyticsKey = this.saveAnalyticsKey.bind(this);
-    this.getAnalyticsKeyPath = this.getAnalyticsKeyPath.bind(this);
+    this.createAnalyticsClient = this.createAnalyticsClient.bind(this);
   }
 
   componentDidMount() {
-    this.getAnalyticsKeyPath();
-    this.createClient();
-    this.readToken();
+    this.createAnalyticsClient();
+    this.createSheetsClient();
   }
 
   fetchAndSend() {
@@ -81,14 +76,12 @@ class App extends Component {
             this.writeToConsole('Got analytics data!\nReading sheets client file...');
             const writer = this.writeToSheet(parsedData);
 
-            const oauth2Client = Object.assign(
-              this.form.state.oauth2Client,
+            const sheetsClient = Object.assign(
+              this.form.state.sheetsClient,
               { credentials: this.form.state.oauthToken }
             );
 
-            console.log(oauth2Client);
-
-            return writer(oauth2Client);
+            return writer(sheetsClient);
           });
       })
       .catch((err) => {
@@ -103,43 +96,65 @@ class App extends Component {
 
     fs.readFile(filepath, (err, content) => {
       if (err) {
-        this.writeToConsole(`Error loading client secret file: ${err.message}`);
+        this.writeToConsole(`Error loading sheets key: ${err.message}`);
       }
 
-      const sheetsKey = JSON.parse(content);
+      const key = JSON.parse(content);
 
       this.writeToConsole('Successfully loaded sheets key!');
 
-      store.set('sheetsKey', sheetsKey);
-      this.createClient(sheetsKey);
+      store.set('sheetsKey', key);
+      this.createSheetsClient(key);
     });
-  }
-
-  getAnalyticsKeyPath() {
-    const filepath = store.get('analyticsKeyPath');
-    if (!filepath) {
-      this.writeToConsole('Failed to load analytics secret file');
-      return;
-    }
-
-    const newFormState = Object.assign(this.form.state, { analyticsKeyPath: filepath });
-    this.form.setState(newFormState);
   }
 
   saveAnalyticsKey() {
     const el = document.getElementById('analyticsKeyLoad');
     const filepath = el.files[0].path;
 
-    const newFormState = Object.assign(this.form.state, { analyticsKeyPath: filepath });
-    this.form.setState(newFormState);
+    fs.readFile(filepath, (err, content) => {
+      if (err) {
+        this.writeToConsole(`Error loading analytics key: ${err.message}`);
+      }
 
-    this.writeToConsole('Successfully loaded analytics key!');
+      const key = JSON.parse(content);
 
-    store.set('analyticsKeyPath', filepath);
+      this.writeToConsole('Successfully loaded analytics key!');
+
+      store.set('analyticsKey', key);
+      this.createAnalyticsClient(key);
+    });
   }
 
+  createAnalyticsClient(key) {
+    key = key || store.get('analyticsKey');
 
-  createClient(sheetsKey) {
+    if (!key) {
+      this.writeToConsole('Error loading analytics key');
+      return;
+    }
+
+    const analyticsClient = new google.auth.JWT(
+      key.client_email,
+      null,
+      key.private_key,
+      ['https://www.googleapis.com/auth/analytics.readonly'],
+      null
+    );
+
+    analyticsClient.authorize((err, tokens) => { // eslint-disable-line no-unused-vars
+      if (err) {
+        console.log(err);
+        return;
+      }
+
+      const newFormState = Object.assign({}, this.form.state, { analyticsClient });
+      return this.form.setState(newFormState);
+    });
+  }And,
+
+
+  createSheetsClient(sheetsKey) {
     sheetsKey = sheetsKey || store.get('sheetsKey');
 
     if (!sheetsKey) {
@@ -154,63 +169,10 @@ class App extends Component {
     const redirectUrl = sheetsKey.installed.redirect_uris[0];
 
     const auth = new GoogleAuth();
-    const oauth2Client = new auth.OAuth2(clientId, clientSecret, redirectUrl);
+    const sheetsClient = new auth.OAuth2(clientId, clientSecret, redirectUrl);
 
-    const newFormState = Object.assign({}, this.form.state, { oauth2Client });
+    const newFormState = Object.assign({}, this.form.state, { sheetsClient });
     return this.form.setState(newFormState);
-  }
-
-  /**
-   * Get credentials
-   */
-  readToken() {
-    const token = store.get('oauthToken');
-
-    if (!token) {
-      this.queryForNewToken();
-      return;
-    }
-
-    const newFormState = Object.assign({}, this.form.state, { oauthToken: token });
-
-    this.form.setState(newFormState);
-  }
-
-  /**
-   * Ask user for new auth token
-   *
-   * @param {google.auth.OAuth2} oauth2Client The OAuth2 client to get token for.
-   * @param {getEventsCallback} callback The callback to call with the authorized
-   *     client.
-   */
-  queryForNewToken() {
-    const oauth2Client = this.form.state.oauth2Client;
-    if (!oauth2Client) {
-      return;
-    }
-    const authUrl = oauth2Client.generateAuthUrl({
-      access_type: 'offline',
-      scope: SCOPES
-    });
-
-    this.writeToConsole(`Authorize this app by visiting this url: ${authUrl} \nEnter that code here in the input bar below and then hit enter.`);
-
-    setTimeout(() => this.console.showInput('handleTokenInput'), 200);
-  }
-
-  handleTokenInput(input) {
-    this.form.state.oauth2Client.getToken(input, (err, token) => {
-      if (err) {
-        this.writeToConsole('Error while trying to retrieve access token', err);
-        return;
-      }
-
-      const newState = Object.assign({}, this.state, { oauthToken: token });
-
-      store.set('oauthToken', token);
-
-      setTimeout(() => this.form.setState(newState), 200);
-    });
   }
 
   writeToSheet(data) {
@@ -239,34 +201,11 @@ class App extends Component {
   }
 
   parseAnalyticsResponse(data, dateRange) {
-    const ret = { rows: [] };
+    const ret = {};
 
-    data.reports.forEach((report) => {
-      const header = report.columnHeader;
-      const dimensionHeaders = (header && header.dimensions) || [];
-      const metricHeaders = ((header && header.metricHeader && header.metricHeader.metricHeaderEntries) || [])
-        .map(item => item.name);
-
-      const headers = [
-        'Date Range Start',
-        'Date Range End',
-        ...metricHeaders,
-        ...dimensionHeaders
-      ]
-        .map($header => $header.replace('ga:', ''));
-
-      Object.assign(ret, { headers });
-
-      report.data.rows.forEach((row) => {
-        const dimensions = row.dimensions || [];
-        const metrics = row.metrics || [];
-
-        for (let i = 0; i < metrics.length; i++) {
-          const metric = metrics[i];
-          ret.rows.push([dateRange.start, dateRange.end, ...metric.values, ...dimensions]);
-        }
-      });
-    });
+    const headers = data.columnHeaders.map(header => header.name);
+    ret.headers = ['Date Range Start', 'Date Range End', ...headers];
+    ret.rows = data.rows.map(row => [dateRange.start, dateRange.end, ...row]);
 
     return ret;
   }
@@ -319,44 +258,38 @@ class App extends Component {
   }
 
   getAnalyticsData(dateRange) {
+    const client = this.form.state.analyticsClient;
+
+    this.writeToConsole(`Getting analytics data with view id ${this.form.state.ids.view}`);
+
+    let metrics = this.form.metrics.map(metric => `ga:${metric}`).join(',');
+    let dimensions = this.form.dimensions.map(metric => `ga:${metric}`).join(',');
+
+    if (!metrics) {
+      metrics = 'ga:sessions';
+    }
+
+    if (!dimensions) {
+      dimensions = 'ga:city,ga:country';
+    }
+
+    const analytics = google.analytics('v3');
+
     return new Promise((resolve, reject) => {
-      this.writeToConsole(`Getting analytics data with view id ${this.form.state.ids.view}`);
-
-      const metrics = this.form.metrics.join('-') || 'sessions';
-      const dimensions = this.form.dimensions.join('-') || 'city-country';
-
-      const subpy = window.require('child_process').spawn('python', [
-        // dear god please this needs to be cleaned somehow
-        path.join(window.__dirname, './analytics.py'),
-        this.form.state.ids.view,
-        this.form.state.analyticsKeyPath,
+      analytics.data.ga.get({
+        auth: client,
+        ids: `ga:${this.form.state.ids.view}`,
         metrics,
         dimensions,
-        dateRange.start,
-        dateRange.end
-      ]);
-
-      let pyData = '';
-
-      subpy.stdout.on('data', (chunk) => {
-        pyData += chunk.toString().replace(/u'/g, "'").replace(/'/g, '"'); // buffer to string
-      });
-
-      subpy.stdout.on('end', () => {
-        pyData = pyData.replace('", u "', '", "'); // fix errors with automatic unicode parsing (eg: ["France", u "Saint-Martin-d"])
-        let parsed;
-
-        try {
-          parsed = JSON.parse(pyData); // string to object
-        } catch (err) {
-          reject(new Error('Received error from Google Analytics API -- be sure that your dates make sense and that your dimensions and metrics can be used in combination with each other.'));
+        'start-date': dateRange.start,
+        'end-date': dateRange.end,
+      }, (err, response) => {
+        if (err) {
+          reject(err);
+          return;
         }
 
-        resolve(parsed);
-      });
-
-      subpy.stdout.on('error', (err) => {
-        reject(err);
+        resolve(response);
       });
     });
   }

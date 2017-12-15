@@ -19,7 +19,6 @@ class Readme extends Component {
 
         <p>2) Click “create credentials” and select OAuth from the dropdown. Select “other” as the type. Name the project something memorable, like “Google Sheets Secret Key”.</p>
 
-
         <p>3) Click the download button to the right of the newly-generated client id. Move it somewhere where it WON'T be deleted or moved, and rename it something like `sheets_key.json`.</p>
 
         <p>4) In Analytics2Sheets, click the "load new sheets key" button and locate your new sheets key file.</p>
