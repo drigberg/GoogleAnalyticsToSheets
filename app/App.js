@@ -42,7 +42,10 @@ class App extends Component {
     this.getAnalyticsData = this.getAnalyticsData.bind(this);
     this.parseAnalyticsResponse = this.parseAnalyticsResponse.bind(this);
     this.writeToSheet = this.writeToSheet.bind(this);
+    this.queryForNewToken = this.queryForNewToken.bind(this);
     this.createSheetsClient = this.createSheetsClient.bind(this);
+    this.readToken = this.readToken.bind(this);
+    this.handleTokenInput = this.handleTokenInput.bind(this);
     this.saveSheetsKey = this.saveSheetsKey.bind(this);
     this.saveAnalyticsKey = this.saveAnalyticsKey.bind(this);
     this.createAnalyticsClient = this.createAnalyticsClient.bind(this);
@@ -51,6 +54,7 @@ class App extends Component {
   componentDidMount() {
     this.createAnalyticsClient();
     this.createSheetsClient();
+    this.readToken();
   }
 
   fetchAndSend() {
@@ -151,7 +155,7 @@ class App extends Component {
       const newFormState = Object.assign({}, this.form.state, { analyticsClient });
       return this.form.setState(newFormState);
     });
-  }And,
+  }
 
 
   createSheetsClient(sheetsKey) {
@@ -173,6 +177,59 @@ class App extends Component {
 
     const newFormState = Object.assign({}, this.form.state, { sheetsClient });
     return this.form.setState(newFormState);
+  }
+
+  /**
+   * Get credentials
+   */
+  readToken() {
+    const token = store.get('oauthToken');
+
+    if (!token) {
+      this.queryForNewToken();
+      return;
+    }
+
+    const newFormState = Object.assign({}, this.form.state, { oauthToken: token });
+
+    this.form.setState(newFormState);
+  }
+
+  /**
+   * Ask user for new auth token
+   *
+   * @param {google.auth.OAuth2} sheetsClient The OAuth2 client to get token for.
+   * @param {getEventsCallback} callback The callback to call with the authorized
+   *     client.
+   */
+  queryForNewToken() {
+    const sheetsClient = this.form.state.sheetsClient;
+    if (!sheetsClient) {
+      return;
+    }
+    const authUrl = sheetsClient.generateAuthUrl({
+      access_type: 'offline',
+      scope: SCOPES
+    });
+
+    this.writeToConsole(`Authorize this app by visiting this url: ${authUrl} \nEnter that code here in the input bar below and then hit enter.`);
+
+    setTimeout(() => this.console.showInput('handleTokenInput'), 200);
+  }
+
+  handleTokenInput(input) {
+    this.form.state.sheetsClient.getToken(input, (err, token) => {
+      if (err) {
+        this.writeToConsole('Error while trying to retrieve access token', err);
+        return;
+      }
+
+      const newState = Object.assign({}, this.state, { oauthToken: token });
+
+      store.set('oauthToken', token);
+
+      setTimeout(() => this.form.setState(newState), 200);
+    });
   }
 
   writeToSheet(data) {

@@ -64,10 +64,11 @@ class Form extends Component {
   }
 
   render() {
+    const haveOAuth = this.state.oauthToken;
     const haveSheetsKey = this.state.sheetsClient;
     const haveAnalyticsKey = this.state.analyticsClient;
 
-    const readyForSend = haveSheetsKey && haveAnalyticsKey;
+    const readyForSend = haveOAuth && haveSheetsKey && haveAnalyticsKey;
 
     return (
       <form style={{ display: this.props.display }} id="form">
@@ -118,6 +119,7 @@ class Form extends Component {
         <button disabled={!readyForSend} type="button" onClick={this.fetchAndSend}>Fetch and Send</button>
 
         <div id="secrets">
+          <button type="button" onClick={this.props.parent.queryForNewToken}>Get New Auth Token</button>
           <label htmlFor="analyticsKeyLoad">
             Load New Analytics Key
             <input
