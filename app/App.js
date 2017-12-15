@@ -3,10 +3,12 @@
  */
 
 import React, { Component } from 'react';
+import { connect } from 'react-redux';
 import Form from './components/Form';
 import Console from './components/Console';
 import Readme from './components/Readme';
 import ToggleReadme from './components/ToggleReadme';
+import { saveAnalyticsClient, saveSheetsClient } from './actions';
 
 // import logo from './logo.svg';
 import './main.css';
@@ -81,7 +83,7 @@ class App extends Component {
             const writer = this.writeToSheet(parsedData);
 
             const sheetsClient = Object.assign(
-              this.form.state.sheetsClient,
+              this.props.clients.sheets,
               { credentials: this.form.state.oauthToken }
             );
 
@@ -152,8 +154,7 @@ class App extends Component {
         return;
       }
 
-      const newFormState = Object.assign({}, this.form.state, { analyticsClient });
-      return this.form.setState(newFormState);
+      this.props.dispatch(saveAnalyticsClient(analyticsClient));
     });
   }
 
@@ -175,8 +176,7 @@ class App extends Component {
     const auth = new GoogleAuth();
     const sheetsClient = new auth.OAuth2(clientId, clientSecret, redirectUrl);
 
-    const newFormState = Object.assign({}, this.form.state, { sheetsClient });
-    return this.form.setState(newFormState);
+    this.props.dispatch(saveSheetsClient(sheetsClient));
   }
 
   /**
@@ -203,11 +203,11 @@ class App extends Component {
    *     client.
    */
   queryForNewToken() {
-    const sheetsClient = this.form.state.sheetsClient;
-    if (!sheetsClient) {
+    const { clients } = this.props;
+    if (!clients || !clients.sheets) {
       return;
     }
-    const authUrl = sheetsClient.generateAuthUrl({
+    const authUrl = clients.sheets.generateAuthUrl({
       access_type: 'offline',
       scope: SCOPES
     });
@@ -218,7 +218,9 @@ class App extends Component {
   }
 
   handleTokenInput(input) {
-    this.form.state.sheetsClient.getToken(input, (err, token) => {
+    const { clients } = this.props;
+
+    clients.sheets.getToken(input, (err, token) => {
       if (err) {
         this.writeToConsole('Error while trying to retrieve access token', err);
         return;
@@ -315,12 +317,15 @@ class App extends Component {
   }
 
   getAnalyticsData(dateRange) {
-    const client = this.form.state.analyticsClient;
+    const { clients } = this.props;
 
     this.writeToConsole(`Getting analytics data with view id ${this.form.state.ids.view}`);
 
-    let metrics = this.form.metrics.map(metric => `ga:${metric}`).join(',');
-    let dimensions = this.form.dimensions.map(metric => `ga:${metric}`).join(',');
+    const { form } = this.props;
+
+    let metrics = form.metrics.map(metric => `ga:${metric}`).join(',');
+    console.log(form)
+    let dimensions = form.dimensions.map(metric => `ga:${metric}`).join(',');
 
     if (!metrics) {
       metrics = 'ga:sessions';
@@ -334,7 +339,7 @@ class App extends Component {
 
     return new Promise((resolve, reject) => {
       analytics.data.ga.get({
-        auth: client,
+        auth: clients.analytics,
         ids: `ga:${this.form.state.ids.view}`,
         metrics,
         dimensions,
@@ -359,16 +364,26 @@ class App extends Component {
   }
 
   render() {
+    const { readmeActive } = this.props;
+
     return (
       <div id="app" style={style}>
         <ToggleReadme parent={this} />
         <h1>Google Analytics 2 Sheets</h1>
-        <Form display={this.state.readmeActive ? 'none' : 'block'} parent={this} writeToConsole={this.writeToConsole} />
-        <Console display={this.state.readmeActive ? 'none' : 'block'} parent={this} writeToConsole={this.writeToConsole} />
-        <Readme display={this.state.readmeActive ? 'block' : 'none'} />
+        <Form display={readmeActive ? 'none' : 'block'} parent={this} writeToConsole={this.writeToConsole} />
+        <Console display={readmeActive ? 'none' : 'block'} parent={this} writeToConsole={this.writeToConsole} />
+        <Readme display={readmeActive ? 'block' : 'none'} />
       </div>
     );
   }
 }
 
-export default App;
+const mapStateToProps = state => {
+  const { clients, console, form } = state;
+
+  return { clients, console, form };
+};
+
+const ConnectedApp = connect(mapStateToProps)(App);
+
+export default ConnectedApp;
