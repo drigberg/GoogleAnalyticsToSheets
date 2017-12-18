@@ -344,24 +344,24 @@ class App extends Component {
   }
 
   render() {
-    const { readmeActive } = this.props;
+    const { readme } = this.props;
 
     return (
       <div id="app" style={style}>
         <ToggleReadme parent={this} />
         <h1>Google Analytics 2 Sheets</h1>
-        <Form display={readmeActive ? 'none' : 'block'} parent={this} />
-        <Console display={readmeActive ? 'none' : 'block'} parent={this} />
-        <Readme display={readmeActive ? 'block' : 'none'} />
+        <Form display={readme.active ? 'none' : 'block'} parent={this} />
+        <Console display={readme.active ? 'none' : 'block'} parent={this} />
+        <Readme display={readme.active ? 'block' : 'none'} />
       </div>
     );
   }
 }
 
 const mapStateToProps = state => {
-  const { clients, console, form, ids } = state;
+  const { clients, console, form, ids, readme } = state;
 
-  return { clients, console, form, ids };
+  return { clients, console, form, ids, readme };
 };
 
 const ConnectedApp = connect(mapStateToProps)(App);

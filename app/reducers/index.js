@@ -4,13 +4,16 @@ import clients from './clients';
 import form from './form';
 import ids from './ids';
 import logger from './logger';
+import readme from './readme';
+
 
 const reducers = combineReducers({
   clients,
   console,
   form,
   ids,
-  logger
+  logger,
+  readme
 });
 
 export default reducers;

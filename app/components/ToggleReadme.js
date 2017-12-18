@@ -1,17 +1,21 @@
 import React, { Component } from 'react';
+import { connect } from 'react-redux';
+import { hideReadme, showReadme } from '../actions';
 
 class ToggleReadme extends Component {
   constructor(props) {
     super(props);
-    this.state = { active: false };
-    this.props.parent.toggleReadme = this;
+
     this.toggle = this.toggle.bind(this);
   }
 
   toggle() {
-    const active = this.props.parent.state.readmeActive;
-    const newState = Object.assign({}, this.props.parent.state, { readmeActive: !active });
-    this.props.parent.setState(newState);
+    if (!this.props.readme.active) {
+      this.props.dispatch(showReadme());
+      return;
+    }
+
+    this.props.dispatch(hideReadme());
   }
 
   render() {
@@ -21,4 +25,12 @@ class ToggleReadme extends Component {
   }
 }
 
-export default ToggleReadme;
+const mapStateToProps = state => {
+  const { readme } = state;
+
+  return { readme };
+};
+
+const ConnectedToggleReadme = connect(mapStateToProps)(ToggleReadme);
+
+export default ConnectedToggleReadme;

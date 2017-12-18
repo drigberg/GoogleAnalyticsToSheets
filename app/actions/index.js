@@ -44,3 +44,10 @@ export const removeInputHandler = () => ({
   type: 'removeInputHandler'
 });
 
+export const hideReadme = () => ({
+  type: 'hideReadme'
+});
+
+export const showReadme = () => ({
+  type: 'showReadme'
+});
