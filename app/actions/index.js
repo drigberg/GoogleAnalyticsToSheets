@@ -35,3 +35,12 @@ export const logger = (text) => ({
   text
 });
 
+export const setInputHandler = (handler) => ({
+  type: 'setInputHandler',
+  handler
+});
+
+export const removeInputHandler = () => ({
+  type: 'removeInputHandler'
+});
+

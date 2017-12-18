@@ -1,9 +1,9 @@
 const $console = (state = {}, action) => {
   switch (action.type) {
-    case 'SHOW_INPUT':
-      return Object.assign(state, { inputVisible: true, inputHandler: action.handler });
-    case 'HIDE_INPUT':
-      return Object.assign(state, { inputVisible: false, inputHandler: null });
+    case 'setInputHandler':
+      return { inputHandler: action.handler };
+    case 'removeInputHandler':
+      return { inputHandler: '' };
     default:
       return state;
   }

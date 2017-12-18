@@ -36,7 +36,6 @@ const style = {
 class App extends Component {
   constructor() {
     super();
-    this.state = {};
 
     this.fetchAndSend = this.fetchAndSend.bind(this);
     this.fetchEnv = this.fetchEnv.bind(this);

@@ -12,12 +12,10 @@ const styles = {
 class Form extends Component {
   constructor(props) {
     super(props);
-    this.state = {};
 
     this.props.parent.form = this;
 
     this.handleInputChange = this.handleInputChange.bind(this);
-    this.fetchAndSend = this.fetchAndSend.bind(this);
   }
 
   handleInputChange(event) {
@@ -29,10 +27,6 @@ class Form extends Component {
     }
 
     this.props.dispatch(removeCheckbox(target.className, target.name));
-  }
-
-  fetchAndSend() {
-    this.props.parent.fetchAndSend(this.state);
   }
 
   getDateRange() {
@@ -117,7 +111,7 @@ class Form extends Component {
           </label>
         </div>
 
-        <button disabled={!readyForSend} type="button" onClick={this.fetchAndSend}>Fetch and Send</button>
+        <button disabled={!readyForSend} type="button" onClick={this.props.parent.fetchAndSend}>Fetch and Send</button>
 
         <div id="secrets">
           <button type="button" onClick={this.props.parent.queryForNewToken}>Get New Auth Token</button>
