@@ -1,16 +1,9 @@
 import React, { Component } from 'react';
 
 class Checkbox extends Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      value: ''
-    };
-  }
-
   render() {
     return (
-      <label>
+      <label htmlFor={this.props.name}>
         {this.props.name}
         <input
           type="checkbox"
