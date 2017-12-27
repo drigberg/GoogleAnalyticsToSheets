@@ -7,8 +7,24 @@ import { connect } from 'react-redux';
 import Form from './components/Form';
 import Console from './components/Console';
 import Readme from './components/Readme';
-import ToggleReadme from './components/ToggleReadme';
-import { LOGGER, SAVE_ANALYTICS_CLIENT, SAVE_SHEETS_CLIENT, SAVE_OAUTH_TOKEN, SAVE_IDS } from './constants/actionTypes';
+import Stats from './components/Stats';
+import MainTabButton from './components/MainTabButton';
+import ReadmeTabButton from './components/ReadmeTabButton';
+import StatsTabButton from './components/StatsTabButton';
+
+import {
+  LOGGER,
+  SAVE_ANALYTICS_CLIENT,
+  SAVE_SHEETS_CLIENT,
+  SAVE_OAUTH_TOKEN,
+  SAVE_IDS
+} from './constants/actionTypes';
+
+import {
+  MAIN_TAB,
+  README_TAB,
+  STATS_TAB
+} from './constants';
 
 // import logo from './logo.svg';
 import './main.css';
@@ -36,6 +52,7 @@ const style = {
 const mapDispatchToProps = dispatch => ({
   saveSheetsClient: client => dispatch({
     type: SAVE_SHEETS_CLIENT,
+
     client
   }),
   saveAnalyticsClient: client => dispatch({
@@ -57,9 +74,9 @@ const mapDispatchToProps = dispatch => ({
 });
 
 const mapStateToProps = state => {
-  const { clients, console, form, ids, readme } = state;
+  const { clients, console, form, ids, readme, tab } = state;
 
-  return { clients, console, form, ids, readme };
+  return { clients, console, form, ids, readme, tab };
 };
 
 class App extends Component {
@@ -373,15 +390,28 @@ class App extends Component {
   }
 
   render() {
-    const { readme } = this.props;
+    const { tab } = this.props;
+
+    const showIf = (expected) => {
+      if (tab === expected) {
+        return 'block';
+      }
+
+      return 'none';
+    };
 
     return (
       <div id="app" style={style}>
-        <ToggleReadme parent={this} />
+        <MainTabButton parent={this} />
+        <ReadmeTabButton parent={this} />
+        <StatsTabButton parent={this} />
+
         <h1>Google Analytics 2 Sheets</h1>
-        <Form display={readme.active ? 'none' : 'block'} parent={this} />
-        <Console display={readme.active ? 'none' : 'block'} parent={this} />
-        <Readme display={readme.active ? 'block' : 'none'} />
+
+        <Form display={showIf(MAIN_TAB)} parent={this} />
+        <Console display={showIf(MAIN_TAB)} parent={this} />
+        <Readme display={showIf(README_TAB)} />
+        <Stats display={showIf(STATS_TAB)} />
       </div>
     );
   }
