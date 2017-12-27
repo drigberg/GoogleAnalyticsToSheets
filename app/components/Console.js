@@ -1,4 +1,6 @@
 import React, { Component } from 'react';
+import { connect } from 'react-redux';
+import { REMOVE_INPUT_HANDLER, SET_INPUT_HANDLER } from '../constants/actionTypes';
 
 const dialogs = window.require('dialogs')();
 const styles = {
@@ -27,16 +29,30 @@ const styles = {
   }
 };
 
+const mapDispatchToProps = dispatch => ({
+  setInputHandler: (handler) =>
+    dispatch({
+      type: SET_INPUT_HANDLER,
+      handler
+    }),
+  removeInputHandler: () =>
+    dispatch({
+      type: REMOVE_INPUT_HANDLER
+    })
+});
+
+const mapStateToProps = state => {
+  const { console, logger } = state;
+
+  return { console, logger };
+};
+
 class Console extends Component {
   constructor(props) {
     super(props);
 
     this.props.parent.console = this;
-    this.state = {
-      inputHandler: null,
-      inputVisible: false,
-      output: ''
-    };
+
     this.dialogAsPromise = this.dialogAsPromise.bind(this);
     this._handleKeyPress = this._handleKeyPress.bind(this);
     this.multipleDialogs = this.multipleDialogs.bind(this);
@@ -51,17 +67,13 @@ class Console extends Component {
   }
 
   showInput(handler) {
-    if (!this.state.inputHandler) {
-      const newState = Object.assign(this.state, { inputVisible: true, inputHandler: handler });
-
-      this.setState(newState);
+    if (!this.props.console.inputHandler) {
+      this.props.setInputHandler(handler);
     }
   }
 
   hideInput() {
-    const newState = Object.assign(this.state, { inputVisible: false, inputHandler: null });
-
-    this.setState(newState);
+    this.props.removeInputHandler();
   }
 
   multipleDialogs(questions, responses) {
@@ -83,7 +95,7 @@ class Console extends Component {
 
   _handleKeyPress(event) {
     if (event.key === 'Enter') {
-      const handler = this.state.inputHandler;
+      const handler = this.props.console.inputHandler;
       const payload = event.target.value;
 
       this.props.parent[handler](payload);
@@ -92,17 +104,22 @@ class Console extends Component {
   }
 
   render() {
-    styles.console.bottom = this.state.inputVisible ? 30 : 0;
-    styles.input.display = this.state.inputVisible ? 'block' : 'none';
+    styles.console.bottom = this.props.console.inputHandler ? 30 : 0;
+    styles.input.display = this.props.console.inputHandler ? 'block' : 'none';
+
+    const consoleStyle = Object.assign({}, styles.console);
+    const inputStyle = Object.assign({}, styles.input);
 
     return (
       <div style={{ display: this.props.display }}>
-        <textarea style={styles.console} disabled cols="80" rows="20" name="output" id="console" value={this.state.output} />
-        <input style={styles.input} type="text" name="input" id="console-input" onKeyPress={this._handleKeyPress} />
+        <textarea style={consoleStyle} disabled cols="80" rows="20" name="output" id="console" value={this.props.logger} />
+        <input style={inputStyle} type="text" name="input" id="console-input" onKeyPress={this._handleKeyPress} />
       </div>
     );
   }
 }
 
-export default Console;
+const ConnectedConsole = connect(mapStateToProps, mapDispatchToProps)(Console);
+
+export default ConnectedConsole;
 

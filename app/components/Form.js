@@ -1,5 +1,10 @@
 import React, { Component } from 'react';
+import { connect } from 'react-redux';
 import Checkbox from './Checkbox';
+import {
+  ADD_CHECKBOX,
+  REMOVE_CHECKBOX
+} from '../constants/actionTypes';
 
 const styles = {
   dates: {
@@ -7,32 +12,45 @@ const styles = {
   }
 };
 
+const mapStateToProps = state => {
+  const { form, clients } = state;
+
+  return { form, clients };
+};
+
+const mapDispatchToProps = dispatch => ({
+  addCheckbox: (className, id) =>
+    dispatch({
+      type: ADD_CHECKBOX,
+      className,
+      id
+    }),
+  removeCheckbox: (className, id) =>
+    dispatch({
+      type: REMOVE_CHECKBOX,
+      className,
+      id
+    })
+});
+
 class Form extends Component {
   constructor(props) {
     super(props);
-    this.state = {
-      metric: {},
-      dimension: {}
-    };
 
     this.props.parent.form = this;
 
     this.handleInputChange = this.handleInputChange.bind(this);
-    this.fetchAndSend = this.fetchAndSend.bind(this);
   }
 
   handleInputChange(event) {
     const target = event.target;
-    const value = target.type === 'checkbox' ? target.checked : target.value;
 
-    const newState = Object.assign({}, this.state);
-    newState[target.className][target.name] = value;
+    if (target.checked) {
+      this.props.addCheckbox(target.className, target.name);
+      return;
+    }
 
-    this.setState(newState);
-  }
-
-  fetchAndSend() {
-    this.props.parent.fetchAndSend(this.state);
+    this.props.removeCheckbox(target.className, target.name);
   }
 
   getDateRange() {
@@ -64,9 +82,11 @@ class Form extends Component {
   }
 
   render() {
-    const haveOAuth = this.state.oauthToken;
-    const haveSheetsKey = this.state.sheetsClient;
-    const haveAnalyticsKey = this.state.analyticsClient;
+    const { clients } = this.props;
+
+    const haveOAuth = clients && clients.oauthToken;
+    const haveSheetsKey = clients && clients.sheets;
+    const haveAnalyticsKey = clients && clients.analytics;
 
     const readyForSend = haveOAuth && haveSheetsKey && haveAnalyticsKey;
 
@@ -74,27 +94,26 @@ class Form extends Component {
       <form style={{ display: this.props.display }} id="form">
         <div>
           <h3>Metrics</h3>
-
-          <Checkbox className="metric" name="sessions" clickHandler={this.handleInputChange} />
-          <Checkbox className="metric" name="users" clickHandler={this.handleInputChange} />
-          <Checkbox className="metric" name="bounceRate" clickHandler={this.handleInputChange} />
-          <Checkbox className="metric" name="pageLoadTime" clickHandler={this.handleInputChange} />
-          <Checkbox className="metric" name="timeOnPage" clickHandler={this.handleInputChange} />
-          <Checkbox className="metric" name="pageviewsPerSession" clickHandler={this.handleInputChange} />
-          <Checkbox className="metric" name="sessionDuration" clickHandler={this.handleInputChange} />
+          <Checkbox className="metrics" name="sessions" clickHandler={this.handleInputChange} />
+          <Checkbox className="metrics" name="users" clickHandler={this.handleInputChange} />
+          <Checkbox className="metrics" name="bounceRate" clickHandler={this.handleInputChange} />
+          <Checkbox className="metrics" name="pageLoadTime" clickHandler={this.handleInputChange} />
+          <Checkbox className="metrics" name="timeOnPage" clickHandler={this.handleInputChange} />
+          <Checkbox className="metrics" name="pageviewsPerSession" clickHandler={this.handleInputChange} />
+          <Checkbox className="metrics" name="sessionDuration" clickHandler={this.handleInputChange} />
         </div>
 
         <div>
           <h3>Dimensions</h3>
-          <Checkbox className="dimension" name="screenResolution" />
-          <Checkbox className="dimension" name="source" />
-          <Checkbox className="dimension" name="referralPath" />
-          <Checkbox className="dimension" name="keyword" />
-          <Checkbox className="dimension" name="city" />
-          <Checkbox className="dimension" name="country" />
-          <Checkbox className="dimension" name="browser" />
-          <Checkbox className="dimension" name="operatingSystem" />
-          <Checkbox className="dimension" name="userType" />
+          <Checkbox className="dimensions" name="screenResolution" clickHandler={this.handleInputChange} />
+          <Checkbox className="dimensions" name="source" clickHandler={this.handleInputChange} />
+          <Checkbox className="dimensions" name="referralPath" clickHandler={this.handleInputChange} />
+          <Checkbox className="dimensions" name="keyword" clickHandler={this.handleInputChange} />
+          <Checkbox className="dimensions" name="city" clickHandler={this.handleInputChange} />
+          <Checkbox className="dimensions" name="country" clickHandler={this.handleInputChange} />
+          <Checkbox className="dimensions" name="browser" clickHandler={this.handleInputChange} />
+          <Checkbox className="dimensions" name="operatingSystem" clickHandler={this.handleInputChange} />
+          <Checkbox className="dimensions" name="userType" clickHandler={this.handleInputChange} />
         </div>
 
         <div style={styles.dates} id="dates">
@@ -116,7 +135,7 @@ class Form extends Component {
           </label>
         </div>
 
-        <button disabled={!readyForSend} type="button" onClick={this.fetchAndSend}>Fetch and Send</button>
+        <button disabled={!readyForSend} type="button" onClick={this.props.parent.fetchAndSend}>Fetch and Send</button>
 
         <div id="secrets">
           <button type="button" onClick={this.props.parent.queryForNewToken}>Get New Auth Token</button>
@@ -145,4 +164,6 @@ class Form extends Component {
   }
 }
 
-export default Form;
+const ConnectedForm = connect(mapStateToProps, mapDispatchToProps)(Form);
+
+export default ConnectedForm;
