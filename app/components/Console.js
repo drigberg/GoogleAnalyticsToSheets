@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import { removeInputHandler, setInputHandler } from '../actions';
+import { REMOVE_INPUT_HANDLER, SET_INPUT_HANDLER } from '../constants/actionTypes';
 
 const dialogs = window.require('dialogs')();
 const styles = {
@@ -29,6 +29,24 @@ const styles = {
   }
 };
 
+const mapDispatchToProps = dispatch => ({
+  setInputHandler: (handler) =>
+    dispatch({
+      type: SET_INPUT_HANDLER,
+      handler
+    }),
+  removeInputHandler: () =>
+    dispatch({
+      type: REMOVE_INPUT_HANDLER
+    })
+});
+
+const mapStateToProps = state => {
+  const { console, logger } = state;
+
+  return { console, logger };
+};
+
 class Console extends Component {
   constructor(props) {
     super(props);
@@ -50,12 +68,12 @@ class Console extends Component {
 
   showInput(handler) {
     if (!this.props.console.inputHandler) {
-      this.props.dispatch(setInputHandler(handler));
+      this.props.setInputHandler(handler);
     }
   }
 
   hideInput() {
-    this.props.dispatch(removeInputHandler());
+    this.props.removeInputHandler();
   }
 
   multipleDialogs(questions, responses) {
@@ -101,13 +119,7 @@ class Console extends Component {
   }
 }
 
-const mapStateToProps = state => {
-  const { console, logger } = state;
-
-  return { console, logger };
-};
-
-const ConnectedConsole = connect(mapStateToProps)(Console);
+const ConnectedConsole = connect(mapStateToProps, mapDispatchToProps)(Console);
 
 export default ConnectedConsole;
 

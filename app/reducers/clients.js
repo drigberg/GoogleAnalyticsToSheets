@@ -1,11 +1,18 @@
+import {
+  SAVE_SHEETS_CLIENT,
+  SAVE_ANALYTICS_CLIENT,
+  SAVE_OAUTH_TOKEN
+} from '../constants/actionTypes';
+
+
 const clients = (state = {}, action) => {
   switch (action.type) {
-    case 'saveSheetsClient':
-      return Object.assign({}, state, { sheets: action.client });
-    case 'saveAnalyticsClient':
-      return Object.assign({}, state, { analytics: action.client });
-    case 'saveOAuthToken':
-      return Object.assign({}, state, { oauthToken: action.token });
+    case SAVE_SHEETS_CLIENT:
+      return { ...state, sheets: action.client };
+    case SAVE_ANALYTICS_CLIENT:
+      return { ...state, analytics: action.client };
+    case SAVE_OAUTH_TOKEN:
+      return { ...state, oauthToken: action.token };
     default:
       return state;
   }

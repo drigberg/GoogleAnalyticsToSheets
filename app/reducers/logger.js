@@ -1,6 +1,10 @@
+import {
+  LOGGER,
+} from '../constants/actionTypes';
+
 const logger = (state = '', action) => {
   switch (action.type) {
-    case 'logger':
+    case LOGGER:
       return `${state}\n${action.text}`;
     default:
       return state;

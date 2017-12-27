@@ -1,13 +1,37 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import Checkbox from './Checkbox';
-import { addCheckbox, removeCheckbox } from '../actions';
+import {
+  ADD_CHECKBOX,
+  REMOVE_CHECKBOX
+} from '../constants/actionTypes';
 
 const styles = {
   dates: {
     margin: '10px 0px'
   }
 };
+
+const mapStateToProps = state => {
+  const { form, clients } = state;
+
+  return { form, clients };
+};
+
+const mapDispatchToProps = dispatch => ({
+  addCheckbox: (className, id) =>
+    dispatch({
+      type: ADD_CHECKBOX,
+      className,
+      id
+    }),
+  removeCheckbox: (className, id) =>
+    dispatch({
+      type: REMOVE_CHECKBOX,
+      className,
+      id
+    })
+});
 
 class Form extends Component {
   constructor(props) {
@@ -22,11 +46,11 @@ class Form extends Component {
     const target = event.target;
 
     if (target.checked) {
-      this.props.dispatch(addCheckbox(target.className, target.name));
+      this.props.addCheckbox(target.className, target.name);
       return;
     }
 
-    this.props.dispatch(removeCheckbox(target.className, target.name));
+    this.props.removeCheckbox(target.className, target.name);
   }
 
   getDateRange() {
@@ -140,12 +164,6 @@ class Form extends Component {
   }
 }
 
-const mapStateToProps = state => {
-  const { form, clients } = state;
-
-  return { form, clients };
-};
-
-const ConnectedForm = connect(mapStateToProps)(Form);
+const ConnectedForm = connect(mapStateToProps, mapDispatchToProps)(Form);
 
 export default ConnectedForm;

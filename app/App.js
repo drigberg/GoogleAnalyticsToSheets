@@ -8,7 +8,7 @@ import Form from './components/Form';
 import Console from './components/Console';
 import Readme from './components/Readme';
 import ToggleReadme from './components/ToggleReadme';
-import { logger, saveAnalyticsClient, saveIds, saveSheetsClient, saveOAuthToken } from './actions';
+import { LOGGER, SAVE_ANALYTICS_CLIENT, SAVE_SHEETS_CLIENT, SAVE_OAUTH_TOKEN, SAVE_IDS } from './constants/actionTypes';
 
 // import logo from './logo.svg';
 import './main.css';
@@ -32,6 +32,35 @@ const style = {
 /**
  * Module
  */
+
+const mapDispatchToProps = dispatch => ({
+  saveSheetsClient: client => dispatch({
+    type: SAVE_SHEETS_CLIENT,
+    client
+  }),
+  saveAnalyticsClient: client => dispatch({
+    type: SAVE_ANALYTICS_CLIENT,
+    client
+  }),
+  saveOAuthToken: (token) => dispatch({
+    type: SAVE_OAUTH_TOKEN,
+    token
+  }),
+  saveIds: (ids) => dispatch({
+    type: SAVE_IDS,
+    ids
+  }),
+  logger: (text) => dispatch({
+    type: LOGGER,
+    text
+  })
+});
+
+const mapStateToProps = state => {
+  const { clients, console, form, ids, readme } = state;
+
+  return { clients, console, form, ids, readme };
+};
 
 class App extends Component {
   constructor() {
@@ -58,13 +87,13 @@ class App extends Component {
   }
 
   fetchAndSend() {
-    this.props.dispatch(logger('\n------\n'));
+    this.props.logger('\n------\n');
     this.fetchEnv()
       .then(() => {
         const dateRange = this.form.getDateRange();
 
         if (!dateRange) {
-          this.props.dispatch(logger('Please be sure that date range is provided, and that start is before end.'));
+          this.props.logger('Please be sure that date range is provided, and that start is before end.');
 
           return null;
         }
@@ -72,12 +101,12 @@ class App extends Component {
         return this.getAnalyticsData(dateRange)
           .then((data) => {
             if (!data) {
-              this.props.dispatch(logger('Error: no data received'));
+              this.props.logger('Error: no data received');
             }
 
             const parsedData = this.parseAnalyticsResponse(data, dateRange);
 
-            this.props.dispatch(logger('Got analytics data!\nReading sheets client file...'));
+            this.props.logger('Got analytics data!\nReading sheets client file...');
             const writer = this.writeToSheet(parsedData);
 
             const sheetsClient = Object.assign(
@@ -89,7 +118,7 @@ class App extends Component {
           });
       })
       .catch((err) => {
-        this.props.dispatch(logger(`Error: ${err.message}`));
+        this.props.logger(`Error: ${err.message}`);
         console.log(err);
       });
   }
@@ -100,12 +129,12 @@ class App extends Component {
 
     fs.readFile(filepath, (err, content) => {
       if (err) {
-        this.props.dispatch(logger(`Error loading sheets key: ${err.message}`));
+        this.props.logger(`Error loading sheets key: ${err.message}`);
       }
 
       const key = JSON.parse(content);
 
-      this.props.dispatch(logger('Successfully loaded sheets key!'));
+      this.props.logger('Successfully loaded sheets key!');
 
       store.set('sheetsKey', key);
       this.createSheetsClient(key);
@@ -118,12 +147,12 @@ class App extends Component {
 
     fs.readFile(filepath, (err, content) => {
       if (err) {
-        this.props.dispatch(logger(`Error loading analytics key: ${err.message}`));
+        this.props.logger(`Error loading analytics key: ${err.message}`);
       }
 
       const key = JSON.parse(content);
 
-      this.props.dispatch(logger('Successfully loaded analytics key!'));
+      this.props.logger('Successfully loaded analytics key!');
 
       store.set('analyticsKey', key);
       this.createAnalyticsClient(key);
@@ -134,7 +163,7 @@ class App extends Component {
     key = key || store.get('analyticsKey');
 
     if (!key) {
-      this.props.dispatch(logger('Error loading analytics key'));
+      this.props.logger('Error loading analytics key');
       return;
     }
 
@@ -152,7 +181,7 @@ class App extends Component {
         return;
       }
 
-      this.props.dispatch(saveAnalyticsClient(analyticsClient));
+      this.props.saveAnalyticsClient(analyticsClient);
     });
   }
 
@@ -161,7 +190,7 @@ class App extends Component {
     sheetsKey = sheetsKey || store.get('sheetsKey');
 
     if (!sheetsKey) {
-      this.props.dispatch(logger('Error loading sheets key'));
+      this.props.logger('Error loading sheets key');
       return;
     }
 
@@ -174,7 +203,7 @@ class App extends Component {
     const auth = new GoogleAuth();
     const sheetsClient = new auth.OAuth2(clientId, clientSecret, redirectUrl);
 
-    this.props.dispatch(saveSheetsClient(sheetsClient));
+    this.props.saveSheetsClient(sheetsClient);
   }
 
   /**
@@ -188,7 +217,7 @@ class App extends Component {
       return;
     }
 
-    this.props.dispatch(saveOAuthToken(token));
+    this.props.saveOAuthToken(token);
   }
 
   /**
@@ -208,7 +237,7 @@ class App extends Component {
       scope: SCOPES
     });
 
-    this.props.dispatch(logger(`Authorize this app by visiting this url: ${authUrl} \nEnter that code here in the input bar below and then hit enter.`));
+    this.props.logger(`Authorize this app by visiting this url: ${authUrl} \nEnter that code here in the input bar below and then hit enter.`);
 
     setTimeout(() => this.console.showInput('handleTokenInput'), 200);
   }
@@ -218,17 +247,17 @@ class App extends Component {
 
     clients.sheets.getToken(input, (err, token) => {
       if (err) {
-        this.props.dispatch(logger('Error while trying to retrieve access token', err));
+        this.props.logger('Error while trying to retrieve access token', err);
         return;
       }
 
-      this.props.dispatch(saveOAuthToken(token));
+      this.props.saveOAuthToken(token);
     });
   }
 
   writeToSheet(data) {
     return (authClient) => {
-      this.props.dispatch(logger('\nSending data to Sheets API...'));
+      this.props.logger('\nSending data to Sheets API...');
       const body = {
         values: [data.headers, ...data.rows]
       };
@@ -243,9 +272,9 @@ class App extends Component {
         resource: body
       }, (err, res) => {
         if (err) {
-          this.props.dispatch(logger(`Write error: ${err.message}`));
+          this.props.logger(`Write error: ${err.message}`);
         } else {
-          this.props.dispatch(logger(`${res.updates.updatedCells} cells updated in range ${res.updates.updatedRange}.\n`));
+          this.props.logger(`${res.updates.updatedCells} cells updated in range ${res.updates.updatedRange}.\n`);
         }
       });
     };
@@ -262,7 +291,7 @@ class App extends Component {
   }
 
   fetchEnv() {
-    this.props.dispatch(logger('Checking for spreadsheet and view ids...'));
+    this.props.logger('Checking for spreadsheet and view ids...');
 
     let env = store.get('env');
     let promise = Promise.resolve();
@@ -276,7 +305,7 @@ class App extends Component {
       promise = this.console.multipleDialogs(questions)
         .then((res) => {
           if (!res[0] || !res[1]) {
-            this.props.dispatch(logger('No info saved.'));
+            this.props.logger('No info saved.');
 
             return;
           }
@@ -286,7 +315,7 @@ class App extends Component {
             viewId: res[1]
           };
 
-          this.props.dispatch(logger('Successfully saved ids!'));
+          this.props.logger('Successfully saved ids!');
 
           store.set('env', env);
           return env;
@@ -297,17 +326,17 @@ class App extends Component {
       .then((data) => {
         env = env || data;
 
-        return this.props.dispatch(saveIds({
+        return this.props.saveIds({
           spreadsheet: env.spreadsheetId,
           view: env.viewId
-        }));
+        });
       });
   }
 
   getAnalyticsData(dateRange) {
     const { clients } = this.props;
 
-    this.props.dispatch(logger(`Getting analytics data with view id ${this.props.ids.view}`));
+    this.props.logger(`Getting analytics data with view id ${this.props.ids.view}`);
 
     const { form } = this.props;
 
@@ -358,12 +387,6 @@ class App extends Component {
   }
 }
 
-const mapStateToProps = state => {
-  const { clients, console, form, ids, readme } = state;
-
-  return { clients, console, form, ids, readme };
-};
-
-const ConnectedApp = connect(mapStateToProps)(App);
+const ConnectedApp = connect(mapStateToProps, mapDispatchToProps)(App);
 
 export default ConnectedApp;

@@ -1,6 +1,23 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import { hideReadme, showReadme } from '../actions';
+import { HIDE_README, SHOW_README } from '../constants/actionTypes';
+
+const mapDispatchToProps = dispatch => ({
+  hideReadme: () =>
+    dispatch({
+      type: HIDE_README
+    }),
+  showReadme: () =>
+    dispatch({
+      type: SHOW_README
+    })
+});
+
+const mapStateToProps = state => {
+  const { readme } = state;
+
+  return { readme };
+};
 
 class ToggleReadme extends Component {
   constructor(props) {
@@ -11,11 +28,11 @@ class ToggleReadme extends Component {
 
   toggle() {
     if (!this.props.readme.active) {
-      this.props.dispatch(showReadme());
+      this.props.showReadme();
       return;
     }
 
-    this.props.dispatch(hideReadme());
+    this.props.hideReadme();
   }
 
   render() {
@@ -25,12 +42,6 @@ class ToggleReadme extends Component {
   }
 }
 
-const mapStateToProps = state => {
-  const { readme } = state;
-
-  return { readme };
-};
-
-const ConnectedToggleReadme = connect(mapStateToProps)(ToggleReadme);
+const ConnectedToggleReadme = connect(mapStateToProps, mapDispatchToProps)(ToggleReadme);
 
 export default ConnectedToggleReadme;

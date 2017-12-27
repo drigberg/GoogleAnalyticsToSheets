@@ -1,15 +1,20 @@
+import {
+  ADD_CHECKBOX,
+  REMOVE_CHECKBOX,
+} from '../constants/actionTypes';
+
 const form = (state = { metrics: [], dimensions: [] }, action) => {
   let index;
   switch (action.type) {
-    case 'addCheckbox':
+    case ADD_CHECKBOX:
       state[action.className].push(action.id);
 
-      return Object.assign({}, state);
-    case 'removeCheckbox':
+      return { ...state };
+    case REMOVE_CHECKBOX:
       index = state[action.className].indexOf(action.id);
       state[action.className].splice(index, 1);
 
-      return Object.assign({}, state);
+      return { ...state };
     default:
       return state;
   }

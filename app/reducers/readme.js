@@ -1,9 +1,14 @@
+import {
+  HIDE_README,
+  SHOW_README
+} from '../constants/actionTypes';
+
 const readme = (state = {}, action) => {
   switch (action.type) {
-    case 'hideReadme':
-      return Object.assign({}, { active: false });
-    case 'showReadme':
-      return Object.assign({}, { active: true });
+    case HIDE_README:
+      return { active: false };
+    case SHOW_README:
+      return { active: true };
     default:
       return state;
   }
