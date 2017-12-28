@@ -76,21 +76,20 @@ class Console extends Component {
     this.props.removeInputHandler();
   }
 
-  multipleDialogs(questions, responses) {
+  async multipleDialogs(questions, responses) {
     if (!responses) {
       responses = [];
     }
 
-    return this.dialogAsPromise(questions.shift())
-      .then((res) => {
-        responses.push(res);
+    const res = await this.dialogAsPromise(questions.shift());
 
-        if (!questions.length) {
-          return responses;
-        }
+    responses.push(res);
 
-        return this.multipleDialogs(questions, responses);
-      });
+    if (!questions.length) {
+      return responses;
+    }
+
+    return this.multipleDialogs(questions, responses);
   }
 
   _handleKeyPress(event) {
