@@ -7,8 +7,24 @@ import { connect } from 'react-redux';
 import Form from './components/Form';
 import Console from './components/Console';
 import Readme from './components/Readme';
-import ToggleReadme from './components/ToggleReadme';
-import { LOGGER, SAVE_ANALYTICS_CLIENT, SAVE_SHEETS_CLIENT, SAVE_OAUTH_TOKEN, SAVE_IDS } from './constants/actionTypes';
+import Stats from './components/Stats';
+import MainTabButton from './components/buttons/MainTabButton';
+import ReadmeTabButton from './components/buttons/ReadmeTabButton';
+import StatsTabButton from './components/buttons/StatsTabButton';
+
+import {
+  LOGGER,
+  SAVE_ANALYTICS_CLIENT,
+  SAVE_SHEETS_CLIENT,
+  SAVE_OAUTH_TOKEN,
+  SAVE_IDS
+} from './constants/actionTypes';
+
+import {
+  MAIN_TAB,
+  README_TAB,
+  STATS_TAB
+} from './constants';
 
 // import logo from './logo.svg';
 import './main.css';
@@ -36,6 +52,7 @@ const style = {
 const mapDispatchToProps = dispatch => ({
   saveSheetsClient: client => dispatch({
     type: SAVE_SHEETS_CLIENT,
+
     client
   }),
   saveAnalyticsClient: client => dispatch({
@@ -57,9 +74,9 @@ const mapDispatchToProps = dispatch => ({
 });
 
 const mapStateToProps = state => {
-  const { clients, console, form, ids, readme } = state;
+  const { clients, console, form, ids, readme, tab } = state;
 
-  return { clients, console, form, ids, readme };
+  return { clients, console, form, ids, readme, tab };
 };
 
 class App extends Component {
@@ -84,38 +101,36 @@ class App extends Component {
     this.createAnalyticsClient();
     this.createSheetsClient();
     this.readToken();
+    this.fetchEnv();
   }
 
   fetchAndSend() {
     this.props.logger('\n------\n');
-    this.fetchEnv()
-      .then(() => {
-        const dateRange = this.form.getDateRange();
+    const dateRange = this.form.getDateRange();
 
-        if (!dateRange) {
-          this.props.logger('Please be sure that date range is provided, and that start is before end.');
+    if (!dateRange) {
+      this.props.logger('Please be sure that date range is provided, and that start is before end.');
 
-          return null;
+      return null;
+    }
+
+    return this.getAnalyticsData(dateRange)
+      .then((data) => {
+        if (!data) {
+          this.props.logger('Error: no data received');
         }
 
-        return this.getAnalyticsData(dateRange)
-          .then((data) => {
-            if (!data) {
-              this.props.logger('Error: no data received');
-            }
+        const parsedData = this.parseAnalyticsResponse(data, dateRange);
 
-            const parsedData = this.parseAnalyticsResponse(data, dateRange);
+        this.props.logger('Got analytics data!\nReading sheets client file...');
+        const writer = this.writeToSheet(parsedData);
 
-            this.props.logger('Got analytics data!\nReading sheets client file...');
-            const writer = this.writeToSheet(parsedData);
+        const sheetsClient = Object.assign(
+          this.props.clients.sheets,
+          { credentials: this.props.clients.oauthToken }
+        );
 
-            const sheetsClient = Object.assign(
-              this.props.clients.sheets,
-              { credentials: this.props.clients.oauthToken }
-            );
-
-            return writer(sheetsClient);
-          });
+        return writer(sheetsClient);
       })
       .catch((err) => {
         this.props.logger(`Error: ${err.message}`);
@@ -291,8 +306,6 @@ class App extends Component {
   }
 
   fetchEnv() {
-    this.props.logger('Checking for spreadsheet and view ids...');
-
     let env = store.get('env');
     let promise = Promise.resolve();
 
@@ -373,15 +386,28 @@ class App extends Component {
   }
 
   render() {
-    const { readme } = this.props;
+    const { tab } = this.props;
+
+    const showIf = (expected) => {
+      if (tab === expected) {
+        return 'block';
+      }
+
+      return 'none';
+    };
 
     return (
       <div id="app" style={style}>
-        <ToggleReadme parent={this} />
+        <MainTabButton parent={this} />
+        <ReadmeTabButton parent={this} />
+        <StatsTabButton parent={this} />
+
         <h1>Google Analytics 2 Sheets</h1>
-        <Form display={readme.active ? 'none' : 'block'} parent={this} />
-        <Console display={readme.active ? 'none' : 'block'} parent={this} />
-        <Readme display={readme.active ? 'block' : 'none'} />
+
+        <Form display={showIf(MAIN_TAB)} parent={this} />
+        <Console display={showIf(MAIN_TAB)} parent={this} />
+        <Readme display={showIf(README_TAB)} />
+        <Stats display={showIf(STATS_TAB)} />
       </div>
     );
   }

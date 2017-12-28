@@ -5,6 +5,7 @@ import form from './form';
 import ids from './ids';
 import logger from './logger';
 import readme from './readme';
+import tab from './tab';
 
 
 const reducers = combineReducers({
@@ -13,7 +14,8 @@ const reducers = combineReducers({
   form,
   ids,
   logger,
-  readme
+  readme,
+  tab
 });
 
 export default reducers;
