@@ -393,6 +393,7 @@ class App extends Component {
     const { tab } = this.props;
 
     const showIf = (expected) => {
+      console.log(tab, expected)
       if (tab === expected) {
         return 'block';
       }
