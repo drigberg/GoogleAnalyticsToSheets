@@ -8,9 +8,9 @@ import Form from './components/Form';
 import Console from './components/Console';
 import Readme from './components/Readme';
 import Stats from './components/Stats';
-import MainTabButton from './components/MainTabButton';
-import ReadmeTabButton from './components/ReadmeTabButton';
-import StatsTabButton from './components/StatsTabButton';
+import MainTabButton from './components/buttons/MainTabButton';
+import ReadmeTabButton from './components/buttons/ReadmeTabButton';
+import StatsTabButton from './components/buttons/StatsTabButton';
 
 import {
   LOGGER,
@@ -101,38 +101,36 @@ class App extends Component {
     this.createAnalyticsClient();
     this.createSheetsClient();
     this.readToken();
+    this.fetchEnv();
   }
 
   fetchAndSend() {
     this.props.logger('\n------\n');
-    this.fetchEnv()
-      .then(() => {
-        const dateRange = this.form.getDateRange();
+    const dateRange = this.form.getDateRange();
 
-        if (!dateRange) {
-          this.props.logger('Please be sure that date range is provided, and that start is before end.');
+    if (!dateRange) {
+      this.props.logger('Please be sure that date range is provided, and that start is before end.');
 
-          return null;
+      return null;
+    }
+
+    return this.getAnalyticsData(dateRange)
+      .then((data) => {
+        if (!data) {
+          this.props.logger('Error: no data received');
         }
 
-        return this.getAnalyticsData(dateRange)
-          .then((data) => {
-            if (!data) {
-              this.props.logger('Error: no data received');
-            }
+        const parsedData = this.parseAnalyticsResponse(data, dateRange);
 
-            const parsedData = this.parseAnalyticsResponse(data, dateRange);
+        this.props.logger('Got analytics data!\nReading sheets client file...');
+        const writer = this.writeToSheet(parsedData);
 
-            this.props.logger('Got analytics data!\nReading sheets client file...');
-            const writer = this.writeToSheet(parsedData);
+        const sheetsClient = Object.assign(
+          this.props.clients.sheets,
+          { credentials: this.props.clients.oauthToken }
+        );
 
-            const sheetsClient = Object.assign(
-              this.props.clients.sheets,
-              { credentials: this.props.clients.oauthToken }
-            );
-
-            return writer(sheetsClient);
-          });
+        return writer(sheetsClient);
       })
       .catch((err) => {
         this.props.logger(`Error: ${err.message}`);
@@ -308,8 +306,6 @@ class App extends Component {
   }
 
   fetchEnv() {
-    this.props.logger('Checking for spreadsheet and view ids...');
-
     let env = store.get('env');
     let promise = Promise.resolve();
 
@@ -393,7 +389,6 @@ class App extends Component {
     const { tab } = this.props;
 
     const showIf = (expected) => {
-      console.log(tab, expected)
       if (tab === expected) {
         return 'block';
       }

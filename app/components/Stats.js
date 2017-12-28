@@ -11,15 +11,27 @@ const tabStyle = {
   marginLeft: '40px'
 };
 
-class Console extends Component {
+class Stats extends Component {
   render() {
     let oauthTokenDiv = <p>Status: Missing</p>;
     let analyticsKeyDiv = <p>Status: Missing</p>;
     let sheetsKeyDiv = <p>Status: Missing</p>;
+    let spreadsheetIdDiv = <p>Status: Missing</p>;
+    let viewIdDiv = <p>Status: Missing</p>;
 
     const analytics = this.props.clients.analytics;
     const sheets = this.props.clients.sheets;
     const oauthToken = this.props.clients.oauthToken;
+    const spreadsheetId = this.props.ids.spreadsheet;
+    const viewId = this.props.ids.view;
+
+    if (spreadsheetId) {
+      spreadsheetIdDiv = <p style={tabStyle}>Value: {spreadsheetId}</p>;
+    }
+
+    if (viewId) {
+      viewIdDiv = <p style={tabStyle}>Value: {viewId}</p>;
+    }
 
     if (oauthToken) {
       oauthTokenDiv = (
@@ -45,7 +57,9 @@ class Console extends Component {
     }
 
     return (
-      <div style={{ display: this.props.display }}id="stats">
+      <div style={{ display: this.props.display }} id="stats">
+        <p>Spreadsheet Id</p> {spreadsheetIdDiv}
+        <p>View Id</p> {viewIdDiv}
         <p>Analytics Key</p> {analyticsKeyDiv}
         <p>Sheets Key</p> {sheetsKeyDiv}
         <p>OAuth Token</p> {oauthTokenDiv}
@@ -54,7 +68,7 @@ class Console extends Component {
   }
 }
 
-const ConnectedConsole = connect(mapStateToProps)(Console);
+const ConnectedStats = connect(mapStateToProps)(Stats);
 
-export default ConnectedConsole;
+export default ConnectedStats;
 

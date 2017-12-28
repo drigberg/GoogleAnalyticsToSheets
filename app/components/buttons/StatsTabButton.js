@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import { SHOW_STATS_TAB } from '../constants/actionTypes';
-import { STATS_TAB } from '../constants';
+import { SHOW_STATS_TAB } from '../../constants/actionTypes';
+import { STATS_TAB } from '../../constants';
 
 const mapDispatchToProps = dispatch => ({
   showStatsTab: () =>
@@ -16,7 +16,7 @@ const mapStateToProps = state => {
   return { tab };
 };
 
-class StatsButton extends Component {
+class StatsTabButton extends Component {
   constructor(props) {
     super(props);
 
@@ -36,6 +36,6 @@ class StatsButton extends Component {
   }
 }
 
-const ConnectedStatsButton = connect(mapStateToProps, mapDispatchToProps)(StatsButton);
+const ConnectedStatsTabButton = connect(mapStateToProps, mapDispatchToProps)(StatsTabButton);
 
-export default ConnectedStatsButton;
+export default ConnectedStatsTabButton;

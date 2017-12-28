@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import { SHOW_MAIN_TAB } from '../constants/actionTypes';
-import { MAIN_TAB } from '../constants';
+import { SHOW_MAIN_TAB } from '../../constants/actionTypes';
+import { MAIN_TAB } from '../../constants';
 
 const mapDispatchToProps = dispatch => ({
   showMainTab: () =>

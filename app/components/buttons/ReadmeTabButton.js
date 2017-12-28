@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import { SHOW_README_TAB } from '../constants/actionTypes';
-import { README_TAB } from '../constants';
+import { SHOW_README_TAB } from '../../constants/actionTypes';
+import { README_TAB } from '../../constants';
 
 const mapDispatchToProps = dispatch => ({
   showReadmeTab: () =>
@@ -16,7 +16,7 @@ const mapStateToProps = state => {
   return { tab };
 };
 
-class ReadmeButton extends Component {
+class ReadmeTabButton extends Component {
   constructor(props) {
     super(props);
 
@@ -36,6 +36,6 @@ class ReadmeButton extends Component {
   }
 }
 
-const ConnectedReadmeButton = connect(mapStateToProps, mapDispatchToProps)(ReadmeButton);
+const ConnectedReadmeTabButton = connect(mapStateToProps, mapDispatchToProps)(ReadmeTabButton);
 
-export default ConnectedReadmeButton;
+export default ConnectedReadmeTabButton;
