@@ -104,38 +104,38 @@ class App extends Component {
     this.fetchEnv();
   }
 
-  fetchAndSend() {
-    this.props.logger('\n------\n');
-    const dateRange = this.form.getDateRange();
+  async fetchAndSend() {
+    try {
+      this.props.logger('\n------\n');
+      const dateRange = this.form.getDateRange();
 
-    if (!dateRange) {
-      this.props.logger('Please be sure that date range is provided, and that start is before end.');
+      if (!dateRange) {
+        this.props.logger('Please be sure that date range is provided, and that start is before end.');
 
-      return null;
+        return null;
+      }
+
+      const data = await this.getAnalyticsData(dateRange);
+
+      if (!data) {
+        this.props.logger('Error: no data received');
+      }
+
+      const parsedData = this.parseAnalyticsResponse(data, dateRange);
+
+      this.props.logger('Got analytics data!\nReading sheets client file...');
+      const writer = this.writeToSheet(parsedData);
+
+      const sheetsClient = Object.assign(
+        this.props.clients.sheets,
+        { credentials: this.props.clients.oauthToken }
+      );
+
+      return writer(sheetsClient);
+    } catch (err) {
+      this.props.logger(`Error: ${err.message}`);
+      console.log(err);
     }
-
-    return this.getAnalyticsData(dateRange)
-      .then((data) => {
-        if (!data) {
-          this.props.logger('Error: no data received');
-        }
-
-        const parsedData = this.parseAnalyticsResponse(data, dateRange);
-
-        this.props.logger('Got analytics data!\nReading sheets client file...');
-        const writer = this.writeToSheet(parsedData);
-
-        const sheetsClient = Object.assign(
-          this.props.clients.sheets,
-          { credentials: this.props.clients.oauthToken }
-        );
-
-        return writer(sheetsClient);
-      })
-      .catch((err) => {
-        this.props.logger(`Error: ${err.message}`);
-        console.log(err);
-      });
   }
 
   saveSheetsKey() {
@@ -305,9 +305,8 @@ class App extends Component {
     return ret;
   }
 
-  fetchEnv() {
+  async fetchEnv() {
     let env = store.get('env');
-    let promise = Promise.resolve();
 
     if (!env) {
       const questions = [
@@ -315,35 +314,27 @@ class App extends Component {
         'What is your view id?'
       ];
 
-      promise = this.console.multipleDialogs(questions)
-        .then((res) => {
-          if (!res[0] || !res[1]) {
-            this.props.logger('No info saved.');
+      const res = await this.console.multipleDialogs(questions);
 
-            return;
-          }
+      if (!res[0] || !res[1]) {
+        this.props.logger('Cancelled. No info saved.');
 
-          env = {
-            spreadsheetId: res[0],
-            viewId: res[1]
-          };
+        return;
+      }
 
-          this.props.logger('Successfully saved ids!');
-
-          store.set('env', env);
-          return env;
-        });
+      env = {
+        spreadsheetId: res[0],
+        viewId: res[1]
+      };
     }
 
-    return promise
-      .then((data) => {
-        env = env || data;
 
-        return this.props.saveIds({
-          spreadsheet: env.spreadsheetId,
-          view: env.viewId
-        });
-      });
+    store.set('env', env);
+
+    return this.props.saveIds({
+      spreadsheet: env.spreadsheetId,
+      view: env.viewId
+    });
   }
 
   getAnalyticsData(dateRange) {
