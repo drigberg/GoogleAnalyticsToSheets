@@ -95,6 +95,7 @@ class App extends Component {
     this.saveSheetsKey = this.saveSheetsKey.bind(this);
     this.saveAnalyticsKey = this.saveAnalyticsKey.bind(this);
     this.createAnalyticsClient = this.createAnalyticsClient.bind(this);
+    this.getNewIds = this.getNewIds.bind(this);
   }
 
   componentDidMount() {
@@ -102,6 +103,10 @@ class App extends Component {
     this.createSheetsClient();
     this.readToken();
     this.fetchEnv();
+  }
+
+  getNewIds() {
+    return this.fetchEnv(true);
   }
 
   fetchAndSend() {
@@ -134,7 +139,6 @@ class App extends Component {
       })
       .catch((err) => {
         this.props.logger(`Error: ${err.message}`);
-        console.log(err);
       });
   }
 
@@ -305,11 +309,13 @@ class App extends Component {
     return ret;
   }
 
-  fetchEnv() {
+  fetchEnv(overwrite) {
     let env = store.get('env');
     let promise = Promise.resolve();
 
-    if (!env) {
+    console.log(env)
+
+    if (!env || !env.spreadsheetId || !env.viewId || overwrite) {
       const questions = [
         'What is the id of your Google Sheet?',
         'What is your view id?'
