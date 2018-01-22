@@ -302,6 +302,16 @@ class App extends Component {
   parseAnalyticsResponse(data, dateRange) {
     const ret = {};
 
+    if (!data || !data.columnHeaders || !data.rows) {
+      let res;
+      try {
+        res = JSON.stringify(data);
+        this.props.logger(`Google Analytics sent an unexpected response: ${res}`);
+      } catch (err) {
+        this.props.logger('Google Analytics responded without data -- please ensure that your account has data to send.');
+      }
+    }
+
     const headers = data.columnHeaders.map(header => header.name);
     ret.headers = ['Date Range Start', 'Date Range End', ...headers];
     ret.rows = data.rows.map(row => [dateRange.start, dateRange.end, ...row]);
@@ -312,8 +322,6 @@ class App extends Component {
   fetchEnv(overwrite) {
     let env = store.get('env');
     let promise = Promise.resolve();
-
-    console.log(env)
 
     if (!env || !env.spreadsheetId || !env.viewId || overwrite) {
       const questions = [

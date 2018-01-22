@@ -69,18 +69,6 @@ class Form extends Component {
     return { start, end };
   }
 
-  get metrics() {
-    return Array.from(document.getElementsByClassName('metric'))
-      .filter(checkbox => checkbox.checked)
-      .map(checkbox => checkbox.id);
-  }
-
-  get dimensions() {
-    return Array.from(document.getElementsByClassName('dimension'))
-      .filter(checkbox => checkbox.checked)
-      .map(checkbox => checkbox.id);
-  }
-
   render() {
     const { clients } = this.props;
 
