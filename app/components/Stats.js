@@ -13,11 +13,11 @@ const tabStyle = {
 
 class Stats extends Component {
   render() {
-    let oauthTokenDiv = <p>Status: Missing</p>;
-    let analyticsKeyDiv = <p>Status: Missing</p>;
-    let sheetsKeyDiv = <p>Status: Missing</p>;
-    let spreadsheetIdDiv = <p>Status: Missing</p>;
-    let viewIdDiv = <p>Status: Missing</p>;
+    let oauthTokenDiv = <p style={tabStyle}>Status: Missing</p>;
+    let analyticsKeyDiv = <p style={tabStyle}>Status: Missing</p>;
+    let sheetsKeyDiv = <p style={tabStyle}>Status: Missing</p>;
+    let spreadsheetIdDiv = <p style={tabStyle}>Status: Missing</p>;
+    let viewIdDiv = <p style={tabStyle}>Status: Missing</p>;
 
     const analytics = this.props.clients.analytics;
     const sheets = this.props.clients.sheets;
@@ -59,10 +59,33 @@ class Stats extends Component {
     return (
       <div style={{ display: this.props.display }} id="stats">
         <p>Spreadsheet Id</p> {spreadsheetIdDiv}
+        <button type="button" onClick={this.props.parent.getNewSpreadsheetId}>Provide New Spreadsheet Id</button>
+
         <p>View Id</p> {viewIdDiv}
+        <button type="button" onClick={this.props.parent.getNewViewId}>Provide New View Id</button>
+
         <p>Analytics Key</p> {analyticsKeyDiv}
+        <label htmlFor="analyticsKeyLoad">
+          Load New Analytics Key
+          <input
+            type="file"
+            name="analyticsKeyLoad"
+            id="analyticsKeyLoad"
+            onChange={this.props.parent.saveAnalyticsKey}
+          />
+        </label>
         <p>Sheets Key</p> {sheetsKeyDiv}
+        <label htmlFor="sheetsKeyLoad">
+          Load New Sheets Key
+          <input
+            type="file"
+            name="sheetsKeyLoad"
+            id="sheetsKeyLoad"
+            onChange={this.props.parent.saveSheetsKey}
+          />
+        </label>
         <p>OAuth Token</p> {oauthTokenDiv}
+        <button type="button" onClick={this.props.parent.queryForNewToken}>Get New Auth Token</button>
       </div>
     );
   }

@@ -124,31 +124,6 @@ class Form extends Component {
         </div>
 
         <button disabled={!readyForSend} type="button" onClick={this.props.parent.fetchAndSend}>Fetch and Send</button>
-
-        <div id="secrets">
-          <button type="button" onClick={this.props.parent.getNewIds}>Provide New Ids</button>
-          <button type="button" onClick={this.props.parent.queryForNewToken}>Get New Auth Token</button>
-
-          <label htmlFor="analyticsKeyLoad">
-            Load New Analytics Key
-            <input
-              type="file"
-              name="analyticsKeyLoad"
-              id="analyticsKeyLoad"
-              onChange={this.props.parent.saveAnalyticsKey}
-            />
-          </label>
-
-          <label htmlFor="sheetsKeyLoad">
-            Load New Sheets Key
-            <input
-              type="file"
-              name="sheetsKeyLoad"
-              id="sheetsKeyLoad"
-              onChange={this.props.parent.saveSheetsKey}
-            />
-          </label>
-        </div>
       </form>
     );
   }

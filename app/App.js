@@ -17,7 +17,9 @@ import {
   SAVE_ANALYTICS_CLIENT,
   SAVE_SHEETS_CLIENT,
   SAVE_OAUTH_TOKEN,
-  SAVE_IDS
+  SAVE_IDS,
+  SAVE_SPREADSHEET_ID,
+  SAVE_VIEW_ID
 } from './constants/actionTypes';
 
 import {
@@ -67,6 +69,14 @@ const mapDispatchToProps = dispatch => ({
     type: SAVE_IDS,
     ids
   }),
+  saveSpreadsheetId: (spreadsheetId) => dispatch({
+    type: SAVE_SPREADSHEET_ID,
+    spreadsheetId
+  }),
+  saveViewId: (viewId) => dispatch({
+    type: SAVE_VIEW_ID,
+    viewId
+  }),
   logger: (text) => dispatch({
     type: LOGGER,
     text
@@ -84,7 +94,7 @@ class App extends Component {
     super();
 
     this.fetchAndSend = this.fetchAndSend.bind(this);
-    this.fetchEnv = this.fetchEnv.bind(this);
+    this.loadIdsFromStore = this.loadIdsFromStore.bind(this);
     this.getAnalyticsData = this.getAnalyticsData.bind(this);
     this.parseAnalyticsResponse = this.parseAnalyticsResponse.bind(this);
     this.writeToSheet = this.writeToSheet.bind(this);
@@ -95,18 +105,53 @@ class App extends Component {
     this.saveSheetsKey = this.saveSheetsKey.bind(this);
     this.saveAnalyticsKey = this.saveAnalyticsKey.bind(this);
     this.createAnalyticsClient = this.createAnalyticsClient.bind(this);
-    this.getNewIds = this.getNewIds.bind(this);
+    this.getNewSpreadsheetId = this.getNewSpreadsheetId.bind(this);
+    this.getNewViewId = this.getNewViewId.bind(this);
   }
 
   componentDidMount() {
     this.createAnalyticsClient();
     this.createSheetsClient();
     this.readToken();
-    this.fetchEnv();
+    this.loadIdsFromStore();
   }
 
-  getNewIds() {
-    return this.fetchEnv(true);
+  getNewSpreadsheetId() {
+    this.console.dialogAsPromise('What is the id of your Google Sheet?')
+      .then((res) => {
+        if (!res) {
+          this.props.logger('No info saved.');
+
+          return;
+        }
+
+        this.props.logger('Successfully saved spreadsheet id!');
+
+        store.set('env.spreadsheetId', res);
+        return this.props.saveSpreadsheetId(res);
+      })
+      .catch((err) => {
+        this.props.logger(`Error: ${err.message}`);
+      });
+  }
+
+  getNewViewId() {
+    this.console.dialogAsPromise('What is your view id for Google Analytics?')
+      .then((res) => {
+        if (!res) {
+          this.props.logger('No info saved.');
+
+          return;
+        }
+
+        this.props.logger('Successfully saved view id!');
+
+        store.set('env.viewId', res);
+        return this.props.saveViewId(res);
+      })
+      .catch((err) => {
+        this.props.logger(`Error: ${err.message}`);
+      });
   }
 
   fetchAndSend() {
@@ -319,45 +364,17 @@ class App extends Component {
     return ret;
   }
 
-  fetchEnv(overwrite) {
-    let env = store.get('env');
-    let promise = Promise.resolve();
+  loadIdsFromStore() {
+    const env = store.get('env');
 
-    if (!env || !env.spreadsheetId || !env.viewId || overwrite) {
-      const questions = [
-        'What is the id of your Google Sheet?',
-        'What is your view id?'
-      ];
-
-      promise = this.console.multipleDialogs(questions)
-        .then((res) => {
-          if (!res[0] || !res[1]) {
-            this.props.logger('No info saved.');
-
-            return;
-          }
-
-          env = {
-            spreadsheetId: res[0],
-            viewId: res[1]
-          };
-
-          this.props.logger('Successfully saved ids!');
-
-          store.set('env', env);
-          return env;
-        });
+    if (!env) {
+      return store.set('env', {});
     }
 
-    return promise
-      .then((data) => {
-        env = env || data;
-
-        return this.props.saveIds({
-          spreadsheet: env.spreadsheetId,
-          view: env.viewId
-        });
-      });
+    return this.props.saveIds({
+      spreadsheet: env.spreadsheetId,
+      view: env.viewId
+    });
   }
 
   getAnalyticsData(dateRange) {
@@ -421,7 +438,7 @@ class App extends Component {
         <Form display={showIf(MAIN_TAB)} parent={this} />
         <Console display={showIf(MAIN_TAB)} parent={this} />
         <Readme display={showIf(README_TAB)} />
-        <Stats display={showIf(STATS_TAB)} />
+        <Stats display={showIf(STATS_TAB)} parent={this} />
       </div>
     );
   }
