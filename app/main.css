@@ -30,3 +30,12 @@ label {
 .tab {
   margin-left: 40px;
 }
+
+#console {
+  font-size: 12px;
+  background: rgb(11, 25, 100);
+  color: rgb(236, 236, 236);
+  width: 100%;
+  height: 300px;
+  border: none;
+}

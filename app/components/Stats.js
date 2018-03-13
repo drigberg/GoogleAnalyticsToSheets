@@ -17,16 +17,23 @@ class Stats extends Component {
     let analyticsKeyDiv = <p style={tabStyle}>Status: Missing</p>;
     let sheetsKeyDiv = <p style={tabStyle}>Status: Missing</p>;
     let spreadsheetIdDiv = <p style={tabStyle}>Status: Missing</p>;
+    let spreadsheetTabDiv = <p style={tabStyle}>Status: Missing</p>;
     let viewIdDiv = <p style={tabStyle}>Status: Missing</p>;
 
     const analytics = this.props.clients.analytics;
     const sheets = this.props.clients.sheets;
     const oauthToken = this.props.clients.oauthToken;
     const spreadsheetId = this.props.ids.spreadsheet;
+    const spreadsheetTab = this.props.ids.spreadsheetTab;
+
     const viewId = this.props.ids.view;
 
     if (spreadsheetId) {
       spreadsheetIdDiv = <p style={tabStyle}>Value: {spreadsheetId}</p>;
+    }
+
+    if (spreadsheetTab) {
+      spreadsheetTabDiv = <p style={tabStyle}>Value: {spreadsheetTab}</p>;
     }
 
     if (viewId) {
@@ -60,6 +67,9 @@ class Stats extends Component {
       <div style={{ display: this.props.display }} id="stats">
         <p>Spreadsheet Id</p> {spreadsheetIdDiv}
         <button type="button" onClick={this.props.parent.getNewSpreadsheetId}>Provide New Spreadsheet Id</button>
+
+        <p>Spreadsheet Tab Name</p> {spreadsheetTabDiv}
+        <button type="button" onClick={this.props.parent.getNewSpreadsheetTab}>Provide New Spreadsheet Tab Name</button>
 
         <p>View Id</p> {viewIdDiv}
         <button type="button" onClick={this.props.parent.getNewViewId}>Provide New View Id</button>

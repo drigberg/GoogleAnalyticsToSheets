@@ -19,6 +19,7 @@ import {
   SAVE_OAUTH_TOKEN,
   SAVE_IDS,
   SAVE_SPREADSHEET_ID,
+  SAVE_SPREADSHEET_TAB,
   SAVE_VIEW_ID
 } from './constants/actionTypes';
 
@@ -54,7 +55,6 @@ const style = {
 const mapDispatchToProps = dispatch => ({
   saveSheetsClient: client => dispatch({
     type: SAVE_SHEETS_CLIENT,
-
     client
   }),
   saveAnalyticsClient: client => dispatch({
@@ -72,6 +72,10 @@ const mapDispatchToProps = dispatch => ({
   saveSpreadsheetId: (spreadsheetId) => dispatch({
     type: SAVE_SPREADSHEET_ID,
     spreadsheetId
+  }),
+  saveSpreadsheetTab: (spreadsheetTab) => dispatch({
+    type: SAVE_SPREADSHEET_TAB,
+    spreadsheetTab
   }),
   saveViewId: (viewId) => dispatch({
     type: SAVE_VIEW_ID,
@@ -101,11 +105,11 @@ class App extends Component {
     this.queryForNewToken = this.queryForNewToken.bind(this);
     this.createSheetsClient = this.createSheetsClient.bind(this);
     this.readToken = this.readToken.bind(this);
-    this.handleTokenInput = this.handleTokenInput.bind(this);
     this.saveSheetsKey = this.saveSheetsKey.bind(this);
     this.saveAnalyticsKey = this.saveAnalyticsKey.bind(this);
     this.createAnalyticsClient = this.createAnalyticsClient.bind(this);
     this.getNewSpreadsheetId = this.getNewSpreadsheetId.bind(this);
+    this.getNewSpreadsheetTab = this.getNewSpreadsheetTab.bind(this);
     this.getNewViewId = this.getNewViewId.bind(this);
   }
 
@@ -129,6 +133,25 @@ class App extends Component {
 
         store.set('env.spreadsheetId', res);
         return this.props.saveSpreadsheetId(res);
+      })
+      .catch((err) => {
+        this.props.logger(`Error: ${err.message}`);
+      });
+  }
+
+  getNewSpreadsheetTab() {
+    this.console.dialogAsPromise('What is the name of the tab you\'d like to write to in your Google Sheet?')
+      .then((res) => {
+        if (!res) {
+          this.props.logger('No info saved.');
+
+          return;
+        }
+
+        this.props.logger('Successfully saved spreadsheet tab!');
+
+        store.set('env.spreadsheetTab', res);
+        return this.props.saveSpreadsheetTab(res);
       })
       .catch((err) => {
         this.props.logger(`Error: ${err.message}`);
@@ -296,26 +319,27 @@ class App extends Component {
     if (!clients || !clients.sheets) {
       return;
     }
+
     const authUrl = clients.sheets.generateAuthUrl({
       access_type: 'offline',
       scope: SCOPES
     });
 
-    this.props.logger(`Authorize this app by visiting this url: ${authUrl} \nEnter that code here in the input bar below and then hit enter.`);
+    this.console.dialogAsPromise(`Authorize this app by clicking this link: ${authUrl}. \nEnter that code here.`)
+    .then((res) => {
+      if (!res) {
+        this.props.logger('No info saved.');
 
-    setTimeout(() => this.console.showInput('handleTokenInput'), 200);
-  }
-
-  handleTokenInput(input) {
-    const { clients } = this.props;
-
-    clients.sheets.getToken(input, (err, token) => {
-      if (err) {
-        this.props.logger('Error while trying to retrieve access token', err);
         return;
       }
 
-      this.props.saveOAuthToken(token);
+      this.props.logger('Successfully saved auth token!');
+
+      store.set('env.spreadsheetId', res);
+      return this.props.saveOAuthToken(res);
+    })
+    .catch((err) => {
+      this.props.logger(`Error: ${err.message}`);
     });
   }
 
@@ -328,10 +352,12 @@ class App extends Component {
 
       const sheets = google.sheets('v4');
 
+      console.log(this.props.ids.spreadsheet, `${this.props.ids.spreadsheetTab}!A1:Z`)
+
       sheets.spreadsheets.values.append({
         auth: authClient,
         spreadsheetId: this.props.ids.spreadsheet,
-        range: 'AllData!A1:Z',
+        range: `${this.props.ids.spreadsheetTab}!A1:Z`,
         valueInputOption: 'RAW',
         resource: body
       }, (err, res) => {
@@ -372,6 +398,7 @@ class App extends Component {
     }
 
     return this.props.saveIds({
+      spreadsheetTab: env.spreadsheetTab,
       spreadsheet: env.spreadsheetId,
       view: env.viewId
     });

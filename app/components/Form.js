@@ -81,7 +81,7 @@ class Form extends Component {
     return (
       <form style={{ display: this.props.display }} id="form">
         <div>
-          <h3>Metrics</h3>
+          <h3>Standard Metrics</h3>
           <Checkbox className="metrics" name="sessions" clickHandler={this.handleInputChange} />
           <Checkbox className="metrics" name="users" clickHandler={this.handleInputChange} />
           <Checkbox className="metrics" name="bounceRate" clickHandler={this.handleInputChange} />
@@ -92,7 +92,7 @@ class Form extends Component {
         </div>
 
         <div>
-          <h3>Dimensions</h3>
+          <h3>Standard Dimensions</h3>
           <Checkbox className="dimensions" name="screenResolution" clickHandler={this.handleInputChange} />
           <Checkbox className="dimensions" name="source" clickHandler={this.handleInputChange} />
           <Checkbox className="dimensions" name="referralPath" clickHandler={this.handleInputChange} />
@@ -102,6 +102,24 @@ class Form extends Component {
           <Checkbox className="dimensions" name="browser" clickHandler={this.handleInputChange} />
           <Checkbox className="dimensions" name="operatingSystem" clickHandler={this.handleInputChange} />
           <Checkbox className="dimensions" name="userType" clickHandler={this.handleInputChange} />
+        </div>
+
+        <div>
+          <h3>Goal Metrics</h3>
+          <Checkbox className="metrics" name="goalStartsAll" clickHandler={this.handleInputChange} />
+          <Checkbox className="metrics" name="goalValueAll" clickHandler={this.handleInputChange} />
+          <Checkbox className="metrics" name="goalValuePerSession" clickHandler={this.handleInputChange} />
+          <Checkbox className="metrics" name="goalConversionRateAll" clickHandler={this.handleInputChange} />
+          <Checkbox className="metrics" name="goalAbandonsAll" clickHandler={this.handleInputChange} />
+          <Checkbox className="metrics" name="goalAbandonRateAll" clickHandler={this.handleInputChange} />
+        </div>
+
+        <div>
+          <h3>Goal Dimensions</h3>
+          <Checkbox className="dimensions" name="goalCompletionLocation" clickHandler={this.handleInputChange} />
+          <Checkbox className="dimensions" name="goalPreviousStep1" clickHandler={this.handleInputChange} />
+          <Checkbox className="dimensions" name="goalPreviousStep2" clickHandler={this.handleInputChange} />
+          <Checkbox className="dimensions" name="goalPreviousStep3" clickHandler={this.handleInputChange} />
         </div>
 
         <div style={styles.dates} id="dates">
