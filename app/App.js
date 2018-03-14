@@ -17,7 +17,10 @@ import {
   SAVE_ANALYTICS_CLIENT,
   SAVE_SHEETS_CLIENT,
   SAVE_OAUTH_TOKEN,
-  SAVE_IDS
+  SAVE_IDS,
+  SAVE_SPREADSHEET_ID,
+  SAVE_SPREADSHEET_TAB,
+  SAVE_VIEW_ID
 } from './constants/actionTypes';
 
 import {
@@ -52,7 +55,6 @@ const style = {
 const mapDispatchToProps = dispatch => ({
   saveSheetsClient: client => dispatch({
     type: SAVE_SHEETS_CLIENT,
-
     client
   }),
   saveAnalyticsClient: client => dispatch({
@@ -66,6 +68,18 @@ const mapDispatchToProps = dispatch => ({
   saveIds: (ids) => dispatch({
     type: SAVE_IDS,
     ids
+  }),
+  saveSpreadsheetId: (spreadsheetId) => dispatch({
+    type: SAVE_SPREADSHEET_ID,
+    spreadsheetId
+  }),
+  saveSpreadsheetTab: (spreadsheetTab) => dispatch({
+    type: SAVE_SPREADSHEET_TAB,
+    spreadsheetTab
+  }),
+  saveViewId: (viewId) => dispatch({
+    type: SAVE_VIEW_ID,
+    viewId
   }),
   logger: (text) => dispatch({
     type: LOGGER,
@@ -84,24 +98,84 @@ class App extends Component {
     super();
 
     this.fetchAndSend = this.fetchAndSend.bind(this);
-    this.fetchEnv = this.fetchEnv.bind(this);
+    this.loadIdsFromStore = this.loadIdsFromStore.bind(this);
     this.getAnalyticsData = this.getAnalyticsData.bind(this);
     this.parseAnalyticsResponse = this.parseAnalyticsResponse.bind(this);
     this.writeToSheet = this.writeToSheet.bind(this);
-    this.queryForNewToken = this.queryForNewToken.bind(this);
+    this.copyTokenLink = this.copyTokenLink.bind(this);
+    this.saveNewToken = this.saveNewToken.bind(this);
     this.createSheetsClient = this.createSheetsClient.bind(this);
     this.readToken = this.readToken.bind(this);
-    this.handleTokenInput = this.handleTokenInput.bind(this);
     this.saveSheetsKey = this.saveSheetsKey.bind(this);
     this.saveAnalyticsKey = this.saveAnalyticsKey.bind(this);
     this.createAnalyticsClient = this.createAnalyticsClient.bind(this);
+    this.getNewSpreadsheetId = this.getNewSpreadsheetId.bind(this);
+    this.getNewSpreadsheetTab = this.getNewSpreadsheetTab.bind(this);
+    this.getNewViewId = this.getNewViewId.bind(this);
   }
 
   componentDidMount() {
     this.createAnalyticsClient();
     this.createSheetsClient();
     this.readToken();
-    this.fetchEnv();
+    this.loadIdsFromStore();
+  }
+
+  getNewSpreadsheetId() {
+    this.console.dialogAsPromise('What is the id of your Google Sheet?')
+      .then((res) => {
+        if (!res) {
+          this.props.logger('No info saved.');
+
+          return;
+        }
+
+        this.props.logger('Successfully saved spreadsheet id!');
+
+        store.set('env.spreadsheetId', res);
+        return this.props.saveSpreadsheetId(res);
+      })
+      .catch((err) => {
+        this.props.logger(`Error: ${err.message}`);
+      });
+  }
+
+  getNewSpreadsheetTab() {
+    this.console.dialogAsPromise('What is the name of the tab you\'d like to write to in your Google Sheet?')
+      .then((res) => {
+        if (!res) {
+          this.props.logger('No info saved.');
+
+          return;
+        }
+
+        this.props.logger('Successfully saved spreadsheet tab!');
+
+        store.set('env.spreadsheetTab', res);
+        return this.props.saveSpreadsheetTab(res);
+      })
+      .catch((err) => {
+        this.props.logger(`Error: ${err.message}`);
+      });
+  }
+
+  getNewViewId() {
+    this.console.dialogAsPromise('What is your view id for Google Analytics?')
+      .then((res) => {
+        if (!res) {
+          this.props.logger('No info saved.');
+
+          return;
+        }
+
+        this.props.logger('Successfully saved view id!');
+
+        store.set('env.viewId', res);
+        return this.props.saveViewId(res);
+      })
+      .catch((err) => {
+        this.props.logger(`Error: ${err.message}`);
+      });
   }
 
   fetchAndSend() {
@@ -134,7 +208,6 @@ class App extends Component {
       })
       .catch((err) => {
         this.props.logger(`Error: ${err.message}`);
-        console.log(err);
       });
   }
 
@@ -228,7 +301,6 @@ class App extends Component {
     const token = store.get('oauthToken');
 
     if (!token) {
-      this.queryForNewToken();
       return;
     }
 
@@ -242,29 +314,41 @@ class App extends Component {
    * @param {getEventsCallback} callback The callback to call with the authorized
    *     client.
    */
-  queryForNewToken() {
+  copyTokenLink() {
     const { clients } = this.props;
     if (!clients || !clients.sheets) {
       return;
     }
+
     const authUrl = clients.sheets.generateAuthUrl({
       access_type: 'offline',
       scope: SCOPES
     });
 
-    this.props.logger(`Authorize this app by visiting this url: ${authUrl} \nEnter that code here in the input bar below and then hit enter.`);
-
-    setTimeout(() => this.console.showInput('handleTokenInput'), 200);
+    const textField = document.createElement('textarea');
+    textField.innerText = authUrl;
+    document.body.appendChild(textField);
+    textField.select();
+    document.execCommand('Copy');
+    textField.remove();
   }
 
-  handleTokenInput(input) {
+  saveNewToken() {
+    const tokenInput = document.getElementById('tokenInput');
+    const code = tokenInput.value;
     const { clients } = this.props;
 
-    clients.sheets.getToken(input, (err, token) => {
+    console.log(tokenInput, code)
+
+    clients.sheets.getToken(code, (err, token) => {
       if (err) {
         this.props.logger('Error while trying to retrieve access token', err);
         return;
       }
+
+      this.props.logger('Successfully saved auth token!');
+
+      store.set('oauthToken', token);
 
       this.props.saveOAuthToken(token);
     });
@@ -279,10 +363,12 @@ class App extends Component {
 
       const sheets = google.sheets('v4');
 
+      console.log(this.props.ids.spreadsheet, `${this.props.ids.spreadsheetTab}!A1:Z`)
+
       sheets.spreadsheets.values.append({
         auth: authClient,
         spreadsheetId: this.props.ids.spreadsheet,
-        range: 'AllData!A1:Z',
+        range: `${this.props.ids.spreadsheetTab}!A1:Z`,
         valueInputOption: 'RAW',
         resource: body
       }, (err, res) => {
@@ -298,6 +384,16 @@ class App extends Component {
   parseAnalyticsResponse(data, dateRange) {
     const ret = {};
 
+    if (!data || !data.columnHeaders || !data.rows) {
+      let res;
+      try {
+        res = JSON.stringify(data);
+        this.props.logger(`Google Analytics sent an unexpected response: ${res}`);
+      } catch (err) {
+        this.props.logger('Google Analytics responded without data -- please ensure that your account has data to send.');
+      }
+    }
+
     const headers = data.columnHeaders.map(header => header.name);
     ret.headers = ['Date Range Start', 'Date Range End', ...headers];
     ret.rows = data.rows.map(row => [dateRange.start, dateRange.end, ...row]);
@@ -305,45 +401,18 @@ class App extends Component {
     return ret;
   }
 
-  fetchEnv() {
-    let env = store.get('env');
-    let promise = Promise.resolve();
+  loadIdsFromStore() {
+    const env = store.get('env');
 
     if (!env) {
-      const questions = [
-        'What is the id of your Google Sheet?',
-        'What is your view id?'
-      ];
-
-      promise = this.console.multipleDialogs(questions)
-        .then((res) => {
-          if (!res[0] || !res[1]) {
-            this.props.logger('No info saved.');
-
-            return;
-          }
-
-          env = {
-            spreadsheetId: res[0],
-            viewId: res[1]
-          };
-
-          this.props.logger('Successfully saved ids!');
-
-          store.set('env', env);
-          return env;
-        });
+      return store.set('env', {});
     }
 
-    return promise
-      .then((data) => {
-        env = env || data;
-
-        return this.props.saveIds({
-          spreadsheet: env.spreadsheetId,
-          view: env.viewId
-        });
-      });
+    return this.props.saveIds({
+      spreadsheetTab: env.spreadsheetTab,
+      spreadsheet: env.spreadsheetId,
+      view: env.viewId
+    });
   }
 
   getAnalyticsData(dateRange) {
@@ -407,7 +476,7 @@ class App extends Component {
         <Form display={showIf(MAIN_TAB)} parent={this} />
         <Console display={showIf(MAIN_TAB)} parent={this} />
         <Readme display={showIf(README_TAB)} />
-        <Stats display={showIf(STATS_TAB)} />
+        <Stats display={showIf(STATS_TAB)} parent={this} />
       </div>
     );
   }

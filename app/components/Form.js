@@ -69,18 +69,6 @@ class Form extends Component {
     return { start, end };
   }
 
-  get metrics() {
-    return Array.from(document.getElementsByClassName('metric'))
-      .filter(checkbox => checkbox.checked)
-      .map(checkbox => checkbox.id);
-  }
-
-  get dimensions() {
-    return Array.from(document.getElementsByClassName('dimension'))
-      .filter(checkbox => checkbox.checked)
-      .map(checkbox => checkbox.id);
-  }
-
   render() {
     const { clients } = this.props;
 
@@ -93,7 +81,7 @@ class Form extends Component {
     return (
       <form style={{ display: this.props.display }} id="form">
         <div>
-          <h3>Metrics</h3>
+          <h3>Standard Metrics</h3>
           <Checkbox className="metrics" name="sessions" clickHandler={this.handleInputChange} />
           <Checkbox className="metrics" name="users" clickHandler={this.handleInputChange} />
           <Checkbox className="metrics" name="bounceRate" clickHandler={this.handleInputChange} />
@@ -104,7 +92,7 @@ class Form extends Component {
         </div>
 
         <div>
-          <h3>Dimensions</h3>
+          <h3>Standard Dimensions</h3>
           <Checkbox className="dimensions" name="screenResolution" clickHandler={this.handleInputChange} />
           <Checkbox className="dimensions" name="source" clickHandler={this.handleInputChange} />
           <Checkbox className="dimensions" name="referralPath" clickHandler={this.handleInputChange} />
@@ -114,6 +102,24 @@ class Form extends Component {
           <Checkbox className="dimensions" name="browser" clickHandler={this.handleInputChange} />
           <Checkbox className="dimensions" name="operatingSystem" clickHandler={this.handleInputChange} />
           <Checkbox className="dimensions" name="userType" clickHandler={this.handleInputChange} />
+        </div>
+
+        <div>
+          <h3>Goal Metrics</h3>
+          <Checkbox className="metrics" name="goalStartsAll" clickHandler={this.handleInputChange} />
+          <Checkbox className="metrics" name="goalValueAll" clickHandler={this.handleInputChange} />
+          <Checkbox className="metrics" name="goalValuePerSession" clickHandler={this.handleInputChange} />
+          <Checkbox className="metrics" name="goalConversionRateAll" clickHandler={this.handleInputChange} />
+          <Checkbox className="metrics" name="goalAbandonsAll" clickHandler={this.handleInputChange} />
+          <Checkbox className="metrics" name="goalAbandonRateAll" clickHandler={this.handleInputChange} />
+        </div>
+
+        <div>
+          <h3>Goal Dimensions</h3>
+          <Checkbox className="dimensions" name="goalCompletionLocation" clickHandler={this.handleInputChange} />
+          <Checkbox className="dimensions" name="goalPreviousStep1" clickHandler={this.handleInputChange} />
+          <Checkbox className="dimensions" name="goalPreviousStep2" clickHandler={this.handleInputChange} />
+          <Checkbox className="dimensions" name="goalPreviousStep3" clickHandler={this.handleInputChange} />
         </div>
 
         <div style={styles.dates} id="dates">
@@ -136,29 +142,6 @@ class Form extends Component {
         </div>
 
         <button disabled={!readyForSend} type="button" onClick={this.props.parent.fetchAndSend}>Fetch and Send</button>
-
-        <div id="secrets">
-          <button type="button" onClick={this.props.parent.queryForNewToken}>Get New Auth Token</button>
-          <label htmlFor="analyticsKeyLoad">
-            Load New Analytics Key
-            <input
-              type="file"
-              name="analyticsKeyLoad"
-              id="analyticsKeyLoad"
-              onChange={this.props.parent.saveAnalyticsKey}
-            />
-          </label>
-
-          <label htmlFor="sheetsKeyLoad">
-            Load New Sheets Key
-            <input
-              type="file"
-              name="sheetsKeyLoad"
-              id="sheetsKeyLoad"
-              onChange={this.props.parent.saveSheetsKey}
-            />
-          </label>
-        </div>
       </form>
     );
   }
