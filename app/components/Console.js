@@ -9,6 +9,17 @@ const mapStateToProps = state => {
   return { console, logger };
 };
 
+const consoleStyle = {
+  fontSize: '12px',
+  backgroundColor: 'rgb(7, 15, 70)',
+  color: 'rgb(236, 236, 236)',
+  width: '70%',
+  height: '300px',
+  border: 'none',
+  margin: '20px auto',
+  display: 'block',
+};
+
 class Console extends Component {
   constructor(props) {
     super(props);
@@ -47,7 +58,7 @@ class Console extends Component {
   render() {
     return (
       <div style={{ display: this.props.display }}>
-        <textarea disabled cols="80" rows="20" name="output" id="console" value={this.props.logger} />
+        <textarea style={consoleStyle} disabled cols="80" rows="20" name="output" id="console" value={this.props.logger} />
       </div>
     );
   }

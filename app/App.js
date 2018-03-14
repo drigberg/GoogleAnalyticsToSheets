@@ -102,7 +102,8 @@ class App extends Component {
     this.getAnalyticsData = this.getAnalyticsData.bind(this);
     this.parseAnalyticsResponse = this.parseAnalyticsResponse.bind(this);
     this.writeToSheet = this.writeToSheet.bind(this);
-    this.queryForNewToken = this.queryForNewToken.bind(this);
+    this.copyTokenLink = this.copyTokenLink.bind(this);
+    this.saveNewToken = this.saveNewToken.bind(this);
     this.createSheetsClient = this.createSheetsClient.bind(this);
     this.readToken = this.readToken.bind(this);
     this.saveSheetsKey = this.saveSheetsKey.bind(this);
@@ -300,7 +301,6 @@ class App extends Component {
     const token = store.get('oauthToken');
 
     if (!token) {
-      this.queryForNewToken();
       return;
     }
 
@@ -314,7 +314,7 @@ class App extends Component {
    * @param {getEventsCallback} callback The callback to call with the authorized
    *     client.
    */
-  queryForNewToken() {
+  copyTokenLink() {
     const { clients } = this.props;
     if (!clients || !clients.sheets) {
       return;
@@ -325,21 +325,32 @@ class App extends Component {
       scope: SCOPES
     });
 
-    this.console.dialogAsPromise(`Authorize this app by clicking this link: ${authUrl}. \nEnter that code here.`)
-    .then((res) => {
-      if (!res) {
-        this.props.logger('No info saved.');
+    const textField = document.createElement('textarea');
+    textField.innerText = authUrl;
+    document.body.appendChild(textField);
+    textField.select();
+    document.execCommand('Copy');
+    textField.remove();
+  }
 
+  saveNewToken() {
+    const tokenInput = document.getElementById('tokenInput');
+    const code = tokenInput.value;
+    const { clients } = this.props;
+
+    console.log(tokenInput, code)
+
+    clients.sheets.getToken(code, (err, token) => {
+      if (err) {
+        this.props.logger('Error while trying to retrieve access token', err);
         return;
       }
 
       this.props.logger('Successfully saved auth token!');
 
-      store.set('env.spreadsheetId', res);
-      return this.props.saveOAuthToken(res);
-    })
-    .catch((err) => {
-      this.props.logger(`Error: ${err.message}`);
+      store.set('oauthToken', token);
+
+      this.props.saveOAuthToken(token);
     });
   }
 

@@ -44,6 +44,7 @@ class Stats extends Component {
       oauthTokenDiv = (
         <div style={tabStyle}>
           <p>Status: Loaded</p>
+          <p>{oauthToken.expiry_date}</p>
           <p>{`Expires: ${new Date(oauthToken.expiry_date)}`}</p>
         </div>
       );
@@ -65,6 +66,12 @@ class Stats extends Component {
 
     return (
       <div style={{ display: this.props.display }} id="stats">
+        <p>OAuth Token</p> {oauthTokenDiv}
+        <button type="button" onClick={this.props.parent.copyTokenLink}>Link for New Auth Token: Copy to Clipboard</button>
+
+        <input id="tokenInput" type="text" style={{ width: '250px', marginLeft: '10px' }} placeholder="Enter the code from the redirect link here" />
+        <button type="button" style={{ marginLeft: '10px' }} onClick={this.props.parent.saveNewToken}>Submit code</button>
+
         <p>Spreadsheet Id</p> {spreadsheetIdDiv}
         <button type="button" onClick={this.props.parent.getNewSpreadsheetId}>Provide New Spreadsheet Id</button>
 
@@ -94,8 +101,6 @@ class Stats extends Component {
             onChange={this.props.parent.saveSheetsKey}
           />
         </label>
-        <p>OAuth Token</p> {oauthTokenDiv}
-        <button type="button" onClick={this.props.parent.queryForNewToken}>Get New Auth Token</button>
       </div>
     );
   }
